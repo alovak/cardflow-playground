@@ -1,16 +1,18 @@
 package issuer
 
-import "github.com/google/uuid"
+import (
+	"fmt"
+
+	"github.com/google/uuid"
+)
 
 type Issuer struct {
-	Accounts []*Account
-	Cards    []Card
+	repo Repository
 }
 
-func New() *Issuer {
+func New(repo Repository) *Issuer {
 	return &Issuer{
-		Accounts: make([]*Account, 0),
-		Cards:    make([]Card, 0),
+		repo: repo,
 	}
 }
 
@@ -21,7 +23,10 @@ func (i *Issuer) CreateAccount(req CreateAccountRequest) (*Account, error) {
 		Currency: req.Currency,
 	}
 
-	i.Accounts = append(i.Accounts, account)
+	err := i.repo.CreateAccount(account)
+	if err != nil {
+		return nil, fmt.Errorf("creating account: %w", err)
+	}
 
 	return account, nil
 }

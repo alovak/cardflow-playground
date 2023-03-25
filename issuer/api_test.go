@@ -15,7 +15,7 @@ import (
 func TestAPI(t *testing.T) {
 	router := chi.NewRouter()
 
-	api := issuer.NewAPI(issuer.New())
+	api := issuer.NewAPI(issuer.New(issuer.NewRepository()))
 	api.AppendRoutes(router)
 
 	t.Run("create account", func(t *testing.T) {
