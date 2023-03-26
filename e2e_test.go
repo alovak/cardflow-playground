@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/alovak/cardflow-playground/acquirer"
 	"github.com/alovak/cardflow-playground/issuer"
 	"github.com/stretchr/testify/require"
 )
@@ -15,9 +16,11 @@ import (
 func TestEndToEndTransaction(t *testing.T) {
 	// Initialize the issuer and acquirer components here
 	issuerBasePath := setupIssuer(t)
+	acquirerBasePath := setupAcquirer(t)
 
 	// configure the issuer client
 	issuerClient := NewIssuerClient(issuerBasePath)
+	acquirerClient := NewAcquirerClient(acquirerBasePath)
 
 	// Given: Create an account with $100 balance
 	accountID, err := issuerClient.CreateAccount(issuer.CreateAccount{
@@ -31,10 +34,32 @@ func TestEndToEndTransaction(t *testing.T) {
 	require.NoError(t, err)
 
 	// Given: Create a new merchant for the acquirer
+	merchant, err := acquirerClient.CreateMerchant(acquirer.CreateMerchant{
+		Name:       "Demo Merchant",
+		MCC:        "5411",
+		PostalCode: "12345",
+		WebSite:    "https://demo.merchant.com",
+	})
+	require.NoError(t, err)
 
 	// When: Acquirer receives the payment request for the merchant with the issued card
+	payment, err := acquirerClient.CreatePayment(merchant.ID, acquirer.CreatePayment{
+		Card: acquirer.Card{
+			Number:         card.Number,
+			CVV:            card.CVV,
+			ExpirationDate: card.ExpirationDate,
+		},
+		Amount:   10_00, // $10
+		Currency: "USD",
+	})
+	require.NoError(t, err)
 
+	fmt.Println(payment)
 	// Then: There should be an authorized transaction in the acquirer
+
+	payment, err = acquirerClient.GetPayment(merchant.ID, payment.ID)
+	require.NoError(t, err)
+	require.Equal(t, acquirer.PaymentStatusAuthorized, payment.Status)
 
 	// In the issuer, there should be an authorized transaction for the card
 
@@ -52,6 +77,17 @@ func setupIssuer(t *testing.T) string {
 	t.Cleanup(issuerApp.Shutdown)
 
 	return fmt.Sprintf("http://%s", issuerApp.Addr)
+}
+
+func setupAcquirer(t *testing.T) string {
+	acquirerApp := acquirer.NewApp()
+	err := acquirerApp.Start()
+	require.NoError(t, err)
+
+	// dont' forget to shutdown the acquirer app
+	t.Cleanup(acquirerApp.Shutdown)
+
+	return fmt.Sprintf("http://%s", acquirerApp.Addr)
 }
 
 type issuerClient struct {
@@ -117,4 +153,89 @@ func (i *issuerClient) IssueCard(accountID string) (issuer.Card, error) {
 	}
 
 	return card, nil
+}
+
+type acquirerClient struct {
+	httpClient *http.Client
+	baseURL    string
+}
+
+func NewAcquirerClient(baseURL string) *acquirerClient {
+	httpClient := &http.Client{
+		Transport: &http.Transport{
+			IdleConnTimeout: 5 * time.Second,
+		},
+	}
+
+	return &acquirerClient{
+		baseURL:    baseURL,
+		httpClient: httpClient,
+	}
+}
+
+func (c *acquirerClient) CreateMerchant(req acquirer.CreateMerchant) (acquirer.Merchant, error) {
+	reqJSON, err := json.Marshal(req)
+	if err != nil {
+		return acquirer.Merchant{}, err
+	}
+
+	res, err := c.httpClient.Post(c.baseURL+"/merchants", "application/json", bytes.NewReader(reqJSON))
+	if err != nil {
+		return acquirer.Merchant{}, err
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		return acquirer.Merchant{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
+	}
+
+	var merchant acquirer.Merchant
+	err = json.NewDecoder(res.Body).Decode(&merchant)
+	if err != nil {
+		return acquirer.Merchant{}, err
+	}
+
+	return merchant, nil
+}
+
+func (c *acquirerClient) CreatePayment(merchantID string, req acquirer.CreatePayment) (acquirer.Payment, error) {
+	reqJSON, err := json.Marshal(req)
+	if err != nil {
+		return acquirer.Payment{}, err
+	}
+
+	res, err := c.httpClient.Post(c.baseURL+"/merchants/"+merchantID+"/payments", "application/json", bytes.NewReader(reqJSON))
+	if err != nil {
+		return acquirer.Payment{}, err
+	}
+
+	if res.StatusCode != http.StatusCreated {
+		return acquirer.Payment{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
+	}
+
+	var payment acquirer.Payment
+	err = json.NewDecoder(res.Body).Decode(&payment)
+	if err != nil {
+		return acquirer.Payment{}, err
+	}
+
+	return payment, nil
+}
+
+func (c *acquirerClient) GetPayment(merchantID, paymentID string) (acquirer.Payment, error) {
+	res, err := c.httpClient.Get(c.baseURL + "/merchants/" + merchantID + "/payments/" + paymentID)
+	if err != nil {
+		return acquirer.Payment{}, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return acquirer.Payment{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusOK)
+	}
+
+	var payment acquirer.Payment
+	err = json.NewDecoder(res.Body).Decode(&payment)
+	if err != nil {
+		return acquirer.Payment{}, err
+	}
+
+	return payment, nil
 }

@@ -35,6 +35,10 @@ func (a *API) createAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	account, err := a.issuer.CreateAccount(create)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(account)
@@ -45,7 +49,7 @@ func (a *API) issueCard(w http.ResponseWriter, r *http.Request) {
 
 	card, err := a.issuer.IssueCard(accountID)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
