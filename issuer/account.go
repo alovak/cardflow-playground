@@ -1,6 +1,6 @@
 package issuer
 
-type CreateAccountRequest struct {
+type CreateAccount struct {
 	Balance  int
 	Currency string
 }

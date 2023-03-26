@@ -4,6 +4,7 @@ import "sync"
 
 type Repository interface {
 	CreateAccount(account *Account) error
+	CreateCard(card *Card) error
 }
 
 type repository struct {
@@ -25,6 +26,15 @@ func (r *repository) CreateAccount(account *Account) error {
 	defer r.mu.Unlock()
 
 	r.Accounts = append(r.Accounts, account)
+
+	return nil
+}
+
+func (r *repository) CreateCard(card *Card) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.Cards = append(r.Cards, card)
 
 	return nil
 }

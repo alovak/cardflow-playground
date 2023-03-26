@@ -15,12 +15,12 @@ import (
 func TestAPI(t *testing.T) {
 	router := chi.NewRouter()
 
-	api := issuer.NewAPI(issuer.New(issuer.NewRepository()))
+	api := issuer.NewAPI(issuer.NewIssuer(issuer.NewRepository()))
 	api.AppendRoutes(router)
 
 	t.Run("create account", func(t *testing.T) {
-		create := issuer.CreateAccountRequest{
-			Balance:  1000,
+		create := issuer.CreateAccount{
+			Balance:  10_00,
 			Currency: "USD",
 		}
 
