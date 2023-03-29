@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
 	"testing"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/alovak/cardflow-playground/acquirer"
 	"github.com/alovak/cardflow-playground/issuer"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slog"
 )
 
 func TestEndToEndTransaction(t *testing.T) {
@@ -70,7 +72,9 @@ func TestEndToEndTransaction(t *testing.T) {
 }
 
 func setupIssuer(t *testing.T) (string, string) {
-	issuerApp := main.NewIssuerApp()
+	logger := slog.New(slog.NewTextHandler(os.Stderr))
+
+	issuerApp := main.NewIssuerApp(logger)
 	err := issuerApp.Start()
 	require.NoError(t, err)
 
@@ -81,7 +85,9 @@ func setupIssuer(t *testing.T) (string, string) {
 }
 
 func setupAcquirer(t *testing.T, iso8583ServerAddr string) string {
-	acquirerApp := main.NewAcquirerApp(iso8583ServerAddr)
+	logger := slog.New(slog.NewTextHandler(os.Stderr))
+
+	acquirerApp := main.NewAcquirerApp(logger, iso8583ServerAddr)
 	err := acquirerApp.Start()
 	require.NoError(t, err)
 

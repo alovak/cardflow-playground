@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"os"
@@ -12,6 +13,7 @@ import (
 	"github.com/alovak/cardflow-playground/issuer"
 	issuer8583 "github.com/alovak/cardflow-playground/issuer/iso8583"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/exp/slog"
 )
 
 type IssuerApp struct {
@@ -19,17 +21,22 @@ type IssuerApp struct {
 	wg                *sync.WaitGroup
 	Addr              string
 	ISO8583ServerAddr string
+	logger            *slog.Logger
+	iso8583Server     io.Closer
 }
 
-func NewIssuerApp() *IssuerApp {
+func NewIssuerApp(logger *slog.Logger) *IssuerApp {
+	logger = logger.With(slog.String("app", "issuer"))
+
 	return &IssuerApp{
-		wg: &sync.WaitGroup{},
+		wg:     &sync.WaitGroup{},
+		logger: logger,
 	}
 }
 
 func (a *IssuerApp) Run() {
 	if err := a.Start(); err != nil {
-		fmt.Printf("Error starting issuer app: %v\n", err)
+		a.logger.Error("Error starting app", err)
 		os.Exit(1)
 	}
 
@@ -42,18 +49,20 @@ func (a *IssuerApp) Run() {
 }
 
 func (a *IssuerApp) Start() error {
-	fmt.Println("Starting issuer app...")
+	a.logger.Info("starting app...")
 
 	// setup the issuer
 	router := chi.NewRouter()
 	repository := issuer.NewRepository()
 
-	iso8583Server := issuer8583.NewServer("127.0.0.1:0")
+	iso8583Server := issuer8583.NewServer(a.logger, "127.0.0.1:0")
 	err := iso8583Server.Start()
 	if err != nil {
 		return fmt.Errorf("starting iso8583 server: %w", err)
 	}
 	a.ISO8583ServerAddr = iso8583Server.Addr
+
+	a.iso8583Server = iso8583Server
 
 	iss := issuer.NewIssuer(repository)
 	api := issuer.NewAPI(iss)
@@ -72,14 +81,14 @@ func (a *IssuerApp) Start() error {
 
 	a.wg.Add(1)
 	go func() {
-		fmt.Printf("Issuer http server started on port %s\n", a.Addr)
+		a.logger.Info("http server started", slog.String("addr", a.Addr))
 
 		if err := a.srv.Serve(l); err != nil {
 			if err != http.ErrServerClosed {
-				fmt.Printf("Error starting issuer http server: %v\n", err)
+				a.logger.Error("starting http server", err)
 			}
 
-			fmt.Println("Issuer http server stopped")
+			a.logger.Info("http server stopped")
 		}
 
 		a.wg.Done()
@@ -89,11 +98,16 @@ func (a *IssuerApp) Start() error {
 }
 
 func (a *IssuerApp) Shutdown() {
-	fmt.Println("Shutting down issuer app...")
+	a.logger.Info("shutting down app...")
 
 	a.srv.Shutdown(context.Background())
 
+	err := a.iso8583Server.Close()
+	if err != nil {
+		a.logger.Error("closing iso8583 server", err)
+	}
+
 	a.wg.Wait()
 
-	fmt.Println("Issuer app stopped")
+	a.logger.Info("app stopped")
 }

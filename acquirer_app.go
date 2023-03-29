@@ -12,6 +12,7 @@ import (
 	"github.com/alovak/cardflow-playground/acquirer"
 	"github.com/alovak/cardflow-playground/acquirer/iso8583"
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/exp/slog"
 )
 
 type AcquirerApp struct {
@@ -19,10 +20,14 @@ type AcquirerApp struct {
 	wg                *sync.WaitGroup
 	Addr              string
 	ISO8583ServerAddr string
+	logger            *slog.Logger
 }
 
-func NewAcquirerApp(iso8583ServerAddr string) *AcquirerApp {
+func NewAcquirerApp(logger *slog.Logger, iso8583ServerAddr string) *AcquirerApp {
+	logger = logger.With(slog.String("app", "acquirer"))
+
 	return &AcquirerApp{
+		logger:            logger,
 		wg:                &sync.WaitGroup{},
 		ISO8583ServerAddr: iso8583ServerAddr,
 	}
@@ -31,7 +36,7 @@ func NewAcquirerApp(iso8583ServerAddr string) *AcquirerApp {
 func (a *AcquirerApp) Run() {
 	err := a.Start()
 	if err != nil {
-		fmt.Printf("Error starting acquirer app: %v\n", err)
+		a.logger.Error("Error starting app", err)
 		os.Exit(1)
 	}
 
@@ -44,14 +49,14 @@ func (a *AcquirerApp) Run() {
 }
 
 func (a *AcquirerApp) Start() error {
-	fmt.Println("Starting acquirer app...")
+	a.logger.Info("starting app...")
 
 	// setup the acquirer
 	router := chi.NewRouter()
 	repository := acquirer.NewRepository()
 
 	// setup iso8583Client
-	iso8583Client, err := iso8583.NewClient(a.ISO8583ServerAddr)
+	iso8583Client, err := iso8583.NewClient(a.logger, a.ISO8583ServerAddr)
 	if err != nil {
 		return fmt.Errorf("creating iso8583 client: %w", err)
 	}
@@ -78,14 +83,14 @@ func (a *AcquirerApp) Start() error {
 
 	a.wg.Add(1)
 	go func() {
-		fmt.Printf("Acquirer http server started on port %s\n", a.Addr)
+		a.logger.Info("http server started", slog.String("addr", a.Addr))
 
 		if err := a.srv.Serve(l); err != nil {
 			if err != http.ErrServerClosed {
-				fmt.Printf("Error starting acquirer http server: %v\n", err)
+				a.logger.Error("Error starting acquirer http server", err)
 			}
 
-			fmt.Println("Acquirer http server stopped")
+			a.logger.Info("http server stopped")
 		}
 
 		a.wg.Done()
@@ -95,11 +100,11 @@ func (a *AcquirerApp) Start() error {
 }
 
 func (a *AcquirerApp) Shutdown() {
-	fmt.Println("Shutting down acquirer app...")
+	a.logger.Info("shutting down app...")
 
 	a.srv.Shutdown(context.Background())
 
 	a.wg.Wait()
 
-	fmt.Println("Acquirer app stopped")
+	a.logger.Info("app stopped")
 }
