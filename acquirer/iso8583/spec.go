@@ -28,7 +28,7 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 			Pref:        prefix.Binary.Fixed,
 		}),
 		2: field.NewString(&field.Spec{
-			Length:      3,
+			Length:      16,
 			Description: "Primary Account Number (PAN)",
 			Enc:         encoding.ASCII,
 			Pref:        prefix.ASCII.Fixed,
@@ -41,7 +41,7 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 			Pad:         padding.Left('0'),
 		}),
 		4: field.NewString(&field.Spec{
-			Length:      10,
+			Length:      12,
 			Description: "Transmission Date & Time",
 			Enc:         encoding.ASCII,
 			Pref:        prefix.ASCII.Fixed,
