@@ -10,6 +10,7 @@ type PaymentStatus string
 
 const (
 	PaymentStatusPending    PaymentStatus = "pending"
+	PaymentStatusError      PaymentStatus = "error"
 	PaymentStatusAuthorized PaymentStatus = "authorized"
 	PaymentStatusDeclined   PaymentStatus = "declined"
 )

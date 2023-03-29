@@ -6,14 +6,17 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"golang.org/x/exp/slog"
 )
 
 type API struct {
 	acquirer *Acquirer
+	logger   *slog.Logger
 }
 
-func NewAPI(acquirer *Acquirer) *API {
+func NewAPI(logger *slog.Logger, acquirer *Acquirer) *API {
 	return &API{
+		logger:   logger,
 		acquirer: acquirer,
 	}
 }
@@ -58,6 +61,7 @@ func (a *API) createPayment(w http.ResponseWriter, r *http.Request) {
 
 	payment, err := a.acquirer.CreatePayment(merchantID, create)
 	if err != nil {
+		a.logger.Error("failed to create payment", "err", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

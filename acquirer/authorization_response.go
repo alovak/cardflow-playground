@@ -1,7 +1,6 @@
 package acquirer
 
 type AuthorizationResponse struct {
-	ApprovalCode             string
-	AuthorizationCode        string
-	RetrievalReferenceNumber string
+	ApprovalCode      string
+	AuthorizationCode string
 }

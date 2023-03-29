@@ -12,7 +12,7 @@ type Acquirer struct {
 }
 
 type ISO8583Client interface {
-	AuthorizePayment(payment *Payment) (AuthorizationResponse, error)
+	AuthorizePayment(payment *Payment, card Card) (AuthorizationResponse, error)
 }
 
 func NewAcquirer(repo Repository, iso8583Client ISO8583Client) *Acquirer {
@@ -58,9 +58,20 @@ func (a *Acquirer) CreatePayment(merchantID string, create CreatePayment) (*Paym
 		return nil, fmt.Errorf("creating payment: %w", err)
 	}
 
-	a.iso8583Client.AuthorizePayment(payment)
+	response, err := a.iso8583Client.AuthorizePayment(payment, create.Card)
+	if err != nil {
+		payment.Status = PaymentStatusError
+		// update payment details
+		return nil, fmt.Errorf("authorizing payment: %w", err)
+	}
 
-	// TODO: update payment status
+	if response.ApprovalCode == "00" {
+		payment.Status = PaymentStatusAuthorized
+	} else {
+		payment.Status = PaymentStatusDeclined
+	}
+
+	// TODO: update payment details
 
 	return payment, nil
 }

@@ -36,7 +36,7 @@ func NewAcquirerApp(logger *slog.Logger, iso8583ServerAddr string) *AcquirerApp 
 func (a *AcquirerApp) Run() {
 	err := a.Start()
 	if err != nil {
-		a.logger.Error("Error starting app", err)
+		a.logger.Error("Error starting app", "err", err)
 		os.Exit(1)
 	}
 
@@ -67,7 +67,7 @@ func (a *AcquirerApp) Start() error {
 	}
 
 	acq := acquirer.NewAcquirer(repository, iso8583Client)
-	api := acquirer.NewAPI(acq)
+	api := acquirer.NewAPI(a.logger, acq)
 	api.AppendRoutes(router)
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -87,7 +87,7 @@ func (a *AcquirerApp) Start() error {
 
 		if err := a.srv.Serve(l); err != nil {
 			if err != http.ErrServerClosed {
-				a.logger.Error("Error starting acquirer http server", err)
+				a.logger.Error("Error starting acquirer http server", "err", err)
 			}
 
 			a.logger.Info("http server stopped")

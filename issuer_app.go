@@ -36,7 +36,7 @@ func NewIssuerApp(logger *slog.Logger) *IssuerApp {
 
 func (a *IssuerApp) Run() {
 	if err := a.Start(); err != nil {
-		a.logger.Error("Error starting app", err)
+		a.logger.Error("Error starting app", "err", err)
 		os.Exit(1)
 	}
 
@@ -85,7 +85,7 @@ func (a *IssuerApp) Start() error {
 
 		if err := a.srv.Serve(l); err != nil {
 			if err != http.ErrServerClosed {
-				a.logger.Error("starting http server", err)
+				a.logger.Error("starting http server", "err", err)
 			}
 
 			a.logger.Info("http server stopped")
@@ -104,7 +104,7 @@ func (a *IssuerApp) Shutdown() {
 
 	err := a.iso8583Server.Close()
 	if err != nil {
-		a.logger.Error("closing iso8583 server", err)
+		a.logger.Error("closing iso8583 server", "err", err)
 	}
 
 	a.wg.Wait()

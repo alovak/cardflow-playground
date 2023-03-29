@@ -29,7 +29,7 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 		}),
 		2: field.NewString(&field.Spec{
 			Length:      3,
-			Description: "Payment Account Number (PAN)",
+			Description: "Primary Account Number (PAN)",
 			Enc:         encoding.ASCII,
 			Pref:        prefix.ASCII.Fixed,
 		}),
