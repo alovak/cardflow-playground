@@ -1,5 +1,7 @@
 package acquirer
 
+import "time"
+
 type CreatePayment struct {
 	Amount   int
 	Currency string
@@ -22,4 +24,5 @@ type Payment struct {
 	Currency   string
 	Card       SafeCard
 	Status     PaymentStatus
+	CreatedAt  time.Time
 }

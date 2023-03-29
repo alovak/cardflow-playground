@@ -2,6 +2,7 @@ package acquirer
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -50,7 +51,8 @@ func (a *Acquirer) CreatePayment(merchantID string, create CreatePayment) (*Paym
 			Last4:          create.Card.Number[len(create.Card.Number)-4:],
 			ExpirationDate: create.Card.ExpirationDate,
 		},
-		Status: PaymentStatusPending,
+		Status:    PaymentStatusPending,
+		CreatedAt: time.Now(),
 	}
 
 	err := a.repo.CreatePayment(payment)
