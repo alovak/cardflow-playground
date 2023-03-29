@@ -23,7 +23,14 @@ func NewClient(iso8583ServerAddr string) (*Client, error) {
 }
 
 func (c *Client) Connect() error {
-	return c.iso8583Connection.Connect()
+	fmt.Printf("Connecting to ISO 8583 Server %s...\n", c.iso8583Connection.Addr())
+
+	if err := c.iso8583Connection.Connect(); err != nil {
+		return fmt.Errorf("connecting to ISO 8583 Server: %w", err)
+	}
+
+	fmt.Printf("Connected to ISO 8583 Server %s\n", c.iso8583Connection.Addr())
+	return nil
 }
 
 func (c *Client) AuthorizePayment(payment *acquirer.Payment) (acquirer.AuthorizationResponse, error) {

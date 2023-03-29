@@ -77,9 +77,7 @@ func setupIssuer(t *testing.T) (string, string) {
 	// dont' forget to shutdown the issuer app
 	t.Cleanup(issuerApp.Shutdown)
 
-	iso8583ServerAddr := "localhost:0000" // TODO: use the actual address for iso8583 port
-
-	return fmt.Sprintf("http://%s", issuerApp.Addr), iso8583ServerAddr
+	return fmt.Sprintf("http://%s", issuerApp.Addr), issuerApp.ISO8583ServerAddr
 }
 
 func setupAcquirer(t *testing.T, iso8583ServerAddr string) string {
