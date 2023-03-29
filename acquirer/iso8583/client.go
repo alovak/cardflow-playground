@@ -2,6 +2,7 @@ package iso8583
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/alovak/cardflow-playground/acquirer"
 	"github.com/moov-io/iso8583"
@@ -23,7 +24,13 @@ type STANGenerator interface {
 func NewClient(logger *slog.Logger, iso8583ServerAddr string, stanGenerator STANGenerator) (*Client, error) {
 	logger = logger.With(slog.String("type", "iso8583-client"), slog.String("addr", iso8583ServerAddr))
 
-	conn, err := iso8583Connection.New(iso8583ServerAddr, spec, readMessageLength, writeMessageLength)
+	conn, err := iso8583Connection.New(
+		iso8583ServerAddr,
+		spec,
+		readMessageLength,
+		writeMessageLength,
+		iso8583Connection.SendTimeout(5*time.Second),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("creating iso8583 connection: %w", err)
 	}
