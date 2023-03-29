@@ -1,4 +1,4 @@
-package acquirer
+package main
 
 import (
 	"context"
@@ -9,22 +9,24 @@ import (
 	"os/signal"
 	"sync"
 
+	"github.com/alovak/cardflow-playground/acquirer"
+	"github.com/alovak/cardflow-playground/acquirer/iso8583"
 	"github.com/go-chi/chi/v5"
 )
 
-type App struct {
+type AcquirerApp struct {
 	srv  *http.Server
 	wg   *sync.WaitGroup
 	Addr string
 }
 
-func NewApp() *App {
-	return &App{
+func NewAcquirerApp() *AcquirerApp {
+	return &AcquirerApp{
 		wg: &sync.WaitGroup{},
 	}
 }
 
-func (a *App) Run() {
+func (a *AcquirerApp) Run() {
 	a.Start()
 
 	// Wait for interrupt signal to gracefully shutdown the app with all services
@@ -35,14 +37,18 @@ func (a *App) Run() {
 	a.Shutdown()
 }
 
-func (a *App) Start() error {
+func (a *AcquirerApp) Start() error {
 	fmt.Println("Starting acquirer app...")
 
 	// setup the acquirer
 	router := chi.NewRouter()
-	repository := NewRepository()
-	acquirer := NewAcquirer(repository)
-	api := NewAPI(acquirer)
+	repository := acquirer.NewRepository()
+
+	// setup iso8583Client
+	iso8583Client := iso8583.NewClient()
+
+	acq := acquirer.NewAcquirer(repository, iso8583Client)
+	api := acquirer.NewAPI(acq)
 	api.AppendRoutes(router)
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -74,7 +80,7 @@ func (a *App) Start() error {
 	return nil
 }
 
-func (a *App) Shutdown() {
+func (a *AcquirerApp) Shutdown() {
 	fmt.Println("Shutting down acquirer app...")
 
 	a.srv.Shutdown(context.Background())

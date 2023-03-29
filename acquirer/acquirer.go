@@ -7,12 +7,18 @@ import (
 )
 
 type Acquirer struct {
-	repo Repository
+	repo          Repository
+	iso8583Client ISO8583Client
 }
 
-func NewAcquirer(repo Repository) *Acquirer {
+type ISO8583Client interface {
+	AuthorizePayment(payment *Payment) (AuthorizationResponse, error)
+}
+
+func NewAcquirer(repo Repository, iso8583Client ISO8583Client) *Acquirer {
 	return &Acquirer{
-		repo: repo,
+		repo:          repo,
+		iso8583Client: iso8583Client,
 	}
 }
 
@@ -52,7 +58,7 @@ func (a *Acquirer) CreatePayment(merchantID string, create CreatePayment) (*Paym
 		return nil, fmt.Errorf("creating payment: %w", err)
 	}
 
-	// TODO: send payment to issuer
+	a.iso8583Client.AuthorizePayment(payment)
 
 	// TODO: update payment status
 

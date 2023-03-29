@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	main "github.com/alovak/cardflow-playground"
 	"github.com/alovak/cardflow-playground/acquirer"
 	"github.com/alovak/cardflow-playground/issuer"
 	"github.com/stretchr/testify/require"
@@ -80,7 +81,7 @@ func setupIssuer(t *testing.T) string {
 }
 
 func setupAcquirer(t *testing.T) string {
-	acquirerApp := acquirer.NewApp()
+	acquirerApp := main.NewAcquirerApp()
 	err := acquirerApp.Start()
 	require.NoError(t, err)
 
