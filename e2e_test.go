@@ -16,8 +16,8 @@ import (
 
 func TestEndToEndTransaction(t *testing.T) {
 	// Initialize the issuer and acquirer components here
-	issuerBasePath := setupIssuer(t)
-	acquirerBasePath := setupAcquirer(t)
+	issuerBasePath, iso8583ServerAddr := setupIssuer(t)
+	acquirerBasePath := setupAcquirer(t, iso8583ServerAddr)
 
 	// configure the issuer client
 	issuerClient := NewIssuerClient(issuerBasePath)
@@ -69,7 +69,7 @@ func TestEndToEndTransaction(t *testing.T) {
 	// Account's hold balance should be equal to the transaction amount
 }
 
-func setupIssuer(t *testing.T) string {
+func setupIssuer(t *testing.T) (string, string) {
 	issuerApp := issuer.NewApp()
 	err := issuerApp.Start()
 	require.NoError(t, err)
@@ -77,11 +77,13 @@ func setupIssuer(t *testing.T) string {
 	// dont' forget to shutdown the issuer app
 	t.Cleanup(issuerApp.Shutdown)
 
-	return fmt.Sprintf("http://%s", issuerApp.Addr)
+	iso8583ServerAddr := "localhost:5000" // TODO: use the actual address for iso8583 port
+
+	return fmt.Sprintf("http://%s", issuerApp.Addr), iso8583ServerAddr
 }
 
-func setupAcquirer(t *testing.T) string {
-	acquirerApp := main.NewAcquirerApp()
+func setupAcquirer(t *testing.T, iso8583ServerAddr string) string {
+	acquirerApp := main.NewAcquirerApp(iso8583ServerAddr)
 	err := acquirerApp.Start()
 	require.NoError(t, err)
 

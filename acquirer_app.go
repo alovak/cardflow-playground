@@ -15,19 +15,25 @@ import (
 )
 
 type AcquirerApp struct {
-	srv  *http.Server
-	wg   *sync.WaitGroup
-	Addr string
+	srv               *http.Server
+	wg                *sync.WaitGroup
+	Addr              string
+	ISO8583ServerAddr string
 }
 
-func NewAcquirerApp() *AcquirerApp {
+func NewAcquirerApp(iso8583ServerAddr string) *AcquirerApp {
 	return &AcquirerApp{
-		wg: &sync.WaitGroup{},
+		wg:                &sync.WaitGroup{},
+		ISO8583ServerAddr: iso8583ServerAddr,
 	}
 }
 
 func (a *AcquirerApp) Run() {
-	a.Start()
+	err := a.Start()
+	if err != nil {
+		fmt.Printf("Error starting acquirer app: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Wait for interrupt signal to gracefully shutdown the app with all services
 	c := make(chan os.Signal, 1)
@@ -46,6 +52,10 @@ func (a *AcquirerApp) Start() error {
 
 	// setup iso8583Client
 	iso8583Client := iso8583.NewClient()
+	// connect to iso8583 server
+	if err := iso8583Client.Connect(a.ISO8583ServerAddr); err != nil {
+		return fmt.Errorf("connecting to iso8583 server at %s: %w", a.ISO8583ServerAddr, err)
+	}
 
 	acq := acquirer.NewAcquirer(repository, iso8583Client)
 	api := acquirer.NewAPI(acq)
