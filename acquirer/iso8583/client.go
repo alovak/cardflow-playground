@@ -13,9 +13,14 @@ import (
 type Client struct {
 	iso8583Connection *iso8583Connection.Connection
 	logger            *slog.Logger
+	stanGenerator     STANGenerator
 }
 
-func NewClient(logger *slog.Logger, iso8583ServerAddr string) (*Client, error) {
+type STANGenerator interface {
+	Next() string
+}
+
+func NewClient(logger *slog.Logger, iso8583ServerAddr string, stanGenerator STANGenerator) (*Client, error) {
 	logger = logger.With(slog.String("type", "iso8583-client"), slog.String("addr", iso8583ServerAddr))
 
 	conn, err := iso8583Connection.New(iso8583ServerAddr, spec, readMessageLength, writeMessageLength)
@@ -26,6 +31,7 @@ func NewClient(logger *slog.Logger, iso8583ServerAddr string) (*Client, error) {
 	return &Client{
 		iso8583Connection: conn,
 		logger:            logger,
+		stanGenerator:     stanGenerator,
 	}, nil
 }
 
@@ -46,6 +52,9 @@ func (c *Client) AuthorizePayment(payment *acquirer.Payment, card acquirer.Card)
 	requestData := &AuthorizationRequest{
 		MTI:                  field.NewStringValue("0100"),
 		PrimaryAccountNumber: field.NewStringValue(card.Number),
+		Amount:               field.NewStringValue(fmt.Sprintf("%d", payment.Amount)),
+		TransmissionDateTime: field.NewStringValue(payment.CreatedAt.Format("060102150405")),
+		STAN:                 field.NewStringValue(c.stanGenerator.Next()),
 	}
 
 	err := requestMessage.Marshal(requestData)

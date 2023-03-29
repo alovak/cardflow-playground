@@ -56,7 +56,8 @@ func (a *AcquirerApp) Start() error {
 	repository := acquirer.NewRepository()
 
 	// setup iso8583Client
-	iso8583Client, err := iso8583.NewClient(a.logger, a.ISO8583ServerAddr)
+	stanGenerator := iso8583.NewStanGenerator()
+	iso8583Client, err := iso8583.NewClient(a.logger, a.ISO8583ServerAddr, stanGenerator)
 	if err != nil {
 		return fmt.Errorf("creating iso8583 client: %w", err)
 	}
