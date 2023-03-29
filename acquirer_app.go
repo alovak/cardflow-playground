@@ -51,10 +51,14 @@ func (a *AcquirerApp) Start() error {
 	repository := acquirer.NewRepository()
 
 	// setup iso8583Client
-	iso8583Client := iso8583.NewClient()
+	iso8583Client, err := iso8583.NewClient(a.ISO8583ServerAddr)
+	if err != nil {
+		return fmt.Errorf("creating iso8583 client: %w", err)
+	}
+
 	// connect to iso8583 server
-	if err := iso8583Client.Connect(a.ISO8583ServerAddr); err != nil {
-		return fmt.Errorf("connecting to iso8583 server at %s: %w", a.ISO8583ServerAddr, err)
+	if err := iso8583Client.Connect(); err != nil {
+		return fmt.Errorf("connecting to iso8583 server: %w", err)
 	}
 
 	acq := acquirer.NewAcquirer(repository, iso8583Client)

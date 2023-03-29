@@ -1,9 +1,13 @@
 package iso8583
 
 import (
+	"fmt"
+	"io"
+
 	"github.com/moov-io/iso8583"
 	"github.com/moov-io/iso8583/encoding"
 	"github.com/moov-io/iso8583/field"
+	"github.com/moov-io/iso8583/network"
 	"github.com/moov-io/iso8583/padding"
 	"github.com/moov-io/iso8583/prefix"
 )
@@ -61,4 +65,26 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 			Pref:        prefix.ASCII.Fixed,
 		}),
 	},
+}
+
+func readMessageLength(r io.Reader) (int, error) {
+	header := network.NewBinary2BytesHeader()
+	n, err := header.ReadFrom(r)
+	if err != nil {
+		return n, fmt.Errorf("reading message header: %w", err)
+	}
+
+	return header.Length(), nil
+}
+
+func writeMessageLength(w io.Writer, length int) (int, error) {
+	header := network.NewBinary2BytesHeader()
+	header.SetLength(length)
+
+	n, err := header.WriteTo(w)
+	if err != nil {
+		return n, fmt.Errorf("writing message header: %w", err)
+	}
+
+	return n, nil
 }
