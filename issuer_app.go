@@ -1,4 +1,4 @@
-package issuer
+package main
 
 import (
 	"context"
@@ -9,22 +9,23 @@ import (
 	"os/signal"
 	"sync"
 
+	"github.com/alovak/cardflow-playground/issuer"
 	"github.com/go-chi/chi/v5"
 )
 
-type App struct {
+type IssuerApp struct {
 	srv  *http.Server
 	wg   *sync.WaitGroup
 	Addr string
 }
 
-func NewApp() *App {
-	return &App{
+func NewIssuerApp() *IssuerApp {
+	return &IssuerApp{
 		wg: &sync.WaitGroup{},
 	}
 }
 
-func (a *App) Run() {
+func (a *IssuerApp) Run() {
 	a.Start()
 
 	// Wait for interrupt signal to gracefully shutdown the app with all services
@@ -35,14 +36,14 @@ func (a *App) Run() {
 	a.Shutdown()
 }
 
-func (a *App) Start() error {
+func (a *IssuerApp) Start() error {
 	fmt.Println("Starting issuer app...")
 
 	// setup the issuer
 	router := chi.NewRouter()
-	repository := NewRepository()
-	issuer := NewIssuer(repository)
-	api := NewAPI(issuer)
+	repository := issuer.NewRepository()
+	iss := issuer.NewIssuer(repository)
+	api := issuer.NewAPI(iss)
 	api.AppendRoutes(router)
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -74,7 +75,7 @@ func (a *App) Start() error {
 	return nil
 }
 
-func (a *App) Shutdown() {
+func (a *IssuerApp) Shutdown() {
 	fmt.Println("Shutting down issuer app...")
 
 	a.srv.Shutdown(context.Background())

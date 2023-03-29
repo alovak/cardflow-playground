@@ -70,7 +70,7 @@ func TestEndToEndTransaction(t *testing.T) {
 }
 
 func setupIssuer(t *testing.T) (string, string) {
-	issuerApp := issuer.NewApp()
+	issuerApp := main.NewIssuerApp()
 	err := issuerApp.Start()
 	require.NoError(t, err)
 
