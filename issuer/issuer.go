@@ -50,6 +50,18 @@ func (i *Issuer) IssueCard(accountID string) (*Card, error) {
 	return card, nil
 }
 
+func (i *Issuer) AuthorizeRequest(req AuthorizationRequest) (AuthorizationResponse, error) {
+	// find the card
+	// find the account
+	// check if the account has enough balance
+	// if yes, create transaction for card and return an approval code
+	// if no, return a decline code
+	return AuthorizationResponse{
+		AuthorizationCode: "123456",
+		ApprovalCode:      "00",
+	}, nil
+}
+
 // generateFakeCardNumber generates a fake card number starting with 9
 // and a random 15-digit number. This is not a valid card number.
 func generateFakeCardNumber() string {

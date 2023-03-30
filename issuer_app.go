@@ -54,17 +54,16 @@ func (a *IssuerApp) Start() error {
 	// setup the issuer
 	router := chi.NewRouter()
 	repository := issuer.NewRepository()
+	iss := issuer.NewIssuer(repository)
 
-	iso8583Server := issuer8583.NewServer(a.logger, "127.0.0.1:0")
+	iso8583Server := issuer8583.NewServer(a.logger, "127.0.0.1:0", iss)
 	err := iso8583Server.Start()
 	if err != nil {
 		return fmt.Errorf("starting iso8583 server: %w", err)
 	}
 	a.ISO8583ServerAddr = iso8583Server.Addr
-
 	a.iso8583Server = iso8583Server
 
-	iss := issuer.NewIssuer(repository)
 	api := issuer.NewAPI(iss)
 	api.AppendRoutes(router)
 

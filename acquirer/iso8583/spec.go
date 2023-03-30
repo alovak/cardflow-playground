@@ -53,8 +53,14 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 			Pref:        prefix.ASCII.Fixed,
 		}),
 		6: field.NewString(&field.Spec{
-			Length:      2,
+			Length:      6,
 			Description: "Authorization Code",
+			Enc:         encoding.ASCII,
+			Pref:        prefix.ASCII.Fixed,
+		}),
+		7: field.NewString(&field.Spec{
+			Length:      3,
+			Description: "Currency",
 			Enc:         encoding.ASCII,
 			Pref:        prefix.ASCII.Fixed,
 		}),

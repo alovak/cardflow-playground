@@ -60,6 +60,7 @@ func (c *Client) AuthorizePayment(payment *acquirer.Payment, card acquirer.Card)
 		MTI:                  field.NewStringValue("0100"),
 		PrimaryAccountNumber: field.NewStringValue(card.Number),
 		Amount:               field.NewStringValue(fmt.Sprintf("%d", payment.Amount)),
+		Currency:             field.NewStringValue(payment.Currency),
 		TransmissionDateTime: field.NewStringValue(payment.CreatedAt.Format("060102150405")),
 		STAN:                 field.NewStringValue(c.stanGenerator.Next()),
 	}
