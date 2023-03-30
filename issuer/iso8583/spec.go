@@ -41,7 +41,7 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 			Pad:         padding.Left('0'),
 		}),
 		4: field.NewString(&field.Spec{
-			Length:      12,
+			Length:      25,
 			Description: "Transmission Date & Time",
 			Enc:         encoding.ASCII,
 			Pref:        prefix.ASCII.Fixed,
@@ -61,6 +61,18 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 		7: field.NewString(&field.Spec{
 			Length:      3,
 			Description: "Currency",
+			Enc:         encoding.ASCII,
+			Pref:        prefix.ASCII.Fixed,
+		}),
+		8: field.NewString(&field.Spec{
+			Length:      4,
+			Description: "Card Verification Value (CVV)",
+			Enc:         encoding.ASCII,
+			Pref:        prefix.ASCII.Fixed,
+		}),
+		9: field.NewString(&field.Spec{
+			Length:      4,
+			Description: "Card Expiration Date",
 			Enc:         encoding.ASCII,
 			Pref:        prefix.ASCII.Fixed,
 		}),

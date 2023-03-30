@@ -1,9 +1,9 @@
 package acquirer
 
 type Card struct {
-	Number         string
-	ExpirationDate string
-	CVV            string
+	Number                string
+	ExpirationDate        string
+	CardVerificationValue string
 }
 
 type SafeCard struct {

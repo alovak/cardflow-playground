@@ -55,14 +55,17 @@ func (c *Client) Connect() error {
 
 func (c *Client) AuthorizePayment(payment *acquirer.Payment, card acquirer.Card) (acquirer.AuthorizationResponse, error) {
 	c.logger.Info("authorizing payment", slog.String("payment_id", payment.ID))
+
 	requestMessage := iso8583.NewMessage(spec)
 	requestData := &AuthorizationRequest{
-		MTI:                  field.NewStringValue("0100"),
-		PrimaryAccountNumber: field.NewStringValue(card.Number),
-		Amount:               field.NewStringValue(fmt.Sprintf("%d", payment.Amount)),
-		Currency:             field.NewStringValue(payment.Currency),
-		TransmissionDateTime: field.NewStringValue(payment.CreatedAt.Format("060102150405")),
-		STAN:                 field.NewStringValue(c.stanGenerator.Next()),
+		MTI:                   field.NewStringValue("0100"),
+		PrimaryAccountNumber:  field.NewStringValue(card.Number),
+		Amount:                field.NewStringValue(fmt.Sprintf("%d", payment.Amount)),
+		Currency:              field.NewStringValue(payment.Currency),
+		TransmissionDateTime:  field.NewStringValue(payment.CreatedAt.Format(time.RFC3339)),
+		STAN:                  field.NewStringValue(c.stanGenerator.Next()),
+		CardVerificationValue: field.NewStringValue(card.CardVerificationValue),
+		ExpirationDate:        field.NewStringValue(card.ExpirationDate),
 	}
 
 	err := requestMessage.Marshal(requestData)

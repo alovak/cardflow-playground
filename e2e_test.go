@@ -48,9 +48,9 @@ func TestEndToEndTransaction(t *testing.T) {
 	// When: Acquirer receives the payment request for the merchant with the issued card
 	payment, err := acquirerClient.CreatePayment(merchant.ID, acquirer.CreatePayment{
 		Card: acquirer.Card{
-			Number:         card.Number,
-			CVV:            card.CVV,
-			ExpirationDate: card.ExpirationDate,
+			Number:                card.Number,
+			CardVerificationValue: card.CardVerificationValue,
+			ExpirationDate:        card.ExpirationDate,
 		},
 		Amount:   10_00, // $10
 		Currency: "USD",

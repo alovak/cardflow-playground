@@ -116,7 +116,9 @@ func (s *server) handleAuthorizationRequest(c *iso8583Connection.Connection, mes
 		Amount:   amount,
 		Currency: requestData.Currency.Value(),
 		Card: issuer.Card{
-			Number: requestData.PrimaryAccountNumber.Value(),
+			Number:                requestData.PrimaryAccountNumber.Value(),
+			ExpirationDate:        requestData.ExpirationDate.Value(),
+			CardVerificationValue: requestData.CardVerificationValue.Value(),
 		},
 	}
 

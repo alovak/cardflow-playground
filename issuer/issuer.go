@@ -35,11 +35,11 @@ func (i *Issuer) CreateAccount(req CreateAccount) (*Account, error) {
 
 func (i *Issuer) IssueCard(accountID string) (*Card, error) {
 	card := &Card{
-		ID:             uuid.New().String(),
-		AccountID:      accountID,
-		Number:         generateFakeCardNumber(),
-		ExpirationDate: time.Now().AddDate(3, 1, 0).Format("01/06"), // 3 years, 1 month from now
-		CVV:            "123",
+		ID:                    uuid.New().String(),
+		AccountID:             accountID,
+		Number:                generateFakeCardNumber(),
+		ExpirationDate:        time.Now().AddDate(3, 1, 0).Format("0106"), // 3 years, 1 month from now
+		CardVerificationValue: "1234",
 	}
 
 	err := i.repo.CreateCard(card)
