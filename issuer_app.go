@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"sync"
 
+	"github.com/alovak/cardflow-playground/internal/middleware"
 	"github.com/alovak/cardflow-playground/issuer"
 	issuer8583 "github.com/alovak/cardflow-playground/issuer/iso8583"
 	"github.com/go-chi/chi/v5"
@@ -53,6 +54,7 @@ func (a *IssuerApp) Start() error {
 
 	// setup the issuer
 	router := chi.NewRouter()
+	router.Use(middleware.NewStructuredLogger(a.logger))
 	repository := issuer.NewRepository()
 	iss := issuer.NewIssuer(repository)
 

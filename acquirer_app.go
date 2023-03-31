@@ -11,6 +11,7 @@ import (
 
 	"github.com/alovak/cardflow-playground/acquirer"
 	"github.com/alovak/cardflow-playground/acquirer/iso8583"
+	"github.com/alovak/cardflow-playground/internal/middleware"
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/exp/slog"
 )
@@ -53,6 +54,8 @@ func (a *AcquirerApp) Start() error {
 
 	// setup the acquirer
 	router := chi.NewRouter()
+	router.Use(middleware.NewStructuredLogger(a.logger))
+
 	repository := acquirer.NewRepository()
 
 	// setup iso8583Client
