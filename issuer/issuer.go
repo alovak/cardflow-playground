@@ -50,15 +50,54 @@ func (i *Issuer) IssueCard(accountID string) (*Card, error) {
 	return card, nil
 }
 
+// ListTransactions returns a list of transactions for the given account ID.
+func (i *Issuer) ListTransactions(accountID string) ([]*Transaction, error) {
+	transactions, err := i.repo.ListTransactions(accountID)
+	if err != nil {
+		return nil, fmt.Errorf("listing transactions: %w", err)
+	}
+
+	return transactions, nil
+}
+
 func (i *Issuer) AuthorizeRequest(req AuthorizationRequest) (AuthorizationResponse, error) {
-	// find the card
+	card, err := i.repo.FindCardForAuthorization(req.Card)
+	if err != nil {
+		if err == ErrNotFound {
+			return AuthorizationResponse{
+				ApprovalCode: ApprovalCodeCardInvalid,
+			}, nil
+		}
+
+		return AuthorizationResponse{}, fmt.Errorf("finding card: %w", err)
+	}
+
+	transaction := &Transaction{
+		ID:        uuid.New().String(),
+		AccountID: card.AccountID,
+		CardID:    card.ID,
+		Amount:    req.Amount,
+		Currency:  req.Currency,
+	}
+
+	err = i.repo.CreateTransaction(transaction)
+	if err != nil {
+		return AuthorizationResponse{}, fmt.Errorf("creating transaction: %w", err)
+	}
+
 	// find the account
 	// check if the account has enough balance
+
+	// if no, return a insufficient funds error
+
 	// if yes, create transaction for card and return an approval code
-	// if no, return a decline code
+	transaction.ApprovalCode = ApprovalCodeApproved
+	transaction.AuthorizationCode = "123456"
+	transaction.Status = TransactionStatusAuthorized
+
 	return AuthorizationResponse{
-		AuthorizationCode: "123456",
-		ApprovalCode:      "00",
+		AuthorizationCode: transaction.AuthorizationCode,
+		ApprovalCode:      transaction.ApprovalCode,
 	}, nil
 }
 

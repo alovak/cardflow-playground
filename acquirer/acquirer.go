@@ -67,13 +67,13 @@ func (a *Acquirer) CreatePayment(merchantID string, create CreatePayment) (*Paym
 		return nil, fmt.Errorf("authorizing payment: %w", err)
 	}
 
+	payment.AuthorizationCode = response.AuthorizationCode
+
 	if response.ApprovalCode == "00" {
 		payment.Status = PaymentStatusAuthorized
 	} else {
 		payment.Status = PaymentStatusDeclined
 	}
-
-	// TODO: update payment details
 
 	return payment, nil
 }

@@ -22,6 +22,7 @@ func (a *API) AppendRoutes(r chi.Router) {
 		r.Post("/", a.createAccount)
 		r.Route("/{accountID}", func(r chi.Router) {
 			r.Post("/cards", a.issueCard)
+			r.Get("/transactions", a.getTransactions)
 		})
 	})
 }
@@ -55,4 +56,17 @@ func (a *API) issueCard(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(card)
+}
+
+func (a *API) getTransactions(w http.ResponseWriter, r *http.Request) {
+	accountID := chi.URLParam(r, "accountID")
+
+	transactions, err := a.issuer.ListTransactions(accountID)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(transactions)
 }

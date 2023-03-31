@@ -57,24 +57,45 @@ func TestEndToEndTransaction(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	fmt.Println(payment)
 	// Then: There should be an authorized transaction in the acquirer
-
 	payment, err = acquirerClient.GetPayment(merchant.ID, payment.ID)
 	require.NoError(t, err)
 	require.Equal(t, acquirer.PaymentStatusAuthorized, payment.Status)
 
 	// In the issuer, there should be an authorized transaction for the card
+	transactions, err := issuerClient.GetTransactions(accountID)
+	require.NoError(t, err)
+
+	require.Len(t, transactions, 1)
+	require.Equal(t, card.ID, transactions[0].CardID)
+	require.Equal(t, 10_00, transactions[0].Amount)
+	require.Equal(t, "USD", transactions[0].Currency)
+	require.Equal(t, issuer.TransactionStatusAuthorized, transactions[0].Status)
+	require.Equal(t, payment.AuthorizationCode, transactions[0].AuthorizationCode)
 
 	// Account's available balance should be less by the transaction amount
 
 	// Account's hold balance should be equal to the transaction amount
 }
 
-func setupIssuer(t *testing.T) (string, string) {
-	logger := slog.New(slog.NewTextHandler(os.Stderr))
+// newLogger returns a new logger that removes time from the output for
+// predictable test output.
+func newLogger() *slog.Logger {
+	th := slog.HandlerOptions{
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			// Remove time from the output for predictable test output.
+			if a.Key == slog.TimeKey {
+				return slog.String("ts", time.Now().Format("15:04:05.000"))
+			}
+			return a
+		},
+	}.NewTextHandler(os.Stderr)
 
-	issuerApp := main.NewIssuerApp(logger)
+	return slog.New(th)
+}
+
+func setupIssuer(t *testing.T) (string, string) {
+	issuerApp := main.NewIssuerApp(newLogger())
 	err := issuerApp.Start()
 	require.NoError(t, err)
 
@@ -85,9 +106,7 @@ func setupIssuer(t *testing.T) (string, string) {
 }
 
 func setupAcquirer(t *testing.T, iso8583ServerAddr string) string {
-	logger := slog.New(slog.NewTextHandler(os.Stderr))
-
-	acquirerApp := main.NewAcquirerApp(logger, iso8583ServerAddr)
+	acquirerApp := main.NewAcquirerApp(newLogger(), iso8583ServerAddr)
 	err := acquirerApp.Start()
 	require.NoError(t, err)
 
@@ -160,6 +179,27 @@ func (i *issuerClient) IssueCard(accountID string) (issuer.Card, error) {
 	}
 
 	return card, nil
+}
+
+// GetTransactions returns the list of transactions for the given card ID
+// and account ID or an error.
+func (i *issuerClient) GetTransactions(accountID string) ([]issuer.Transaction, error) {
+	res, err := i.httpClient.Get(i.baseURL + "/accounts/" + accountID + "/transactions")
+	if err != nil {
+		return nil, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusOK)
+	}
+
+	var transactions []issuer.Transaction
+	err = json.NewDecoder(res.Body).Decode(&transactions)
+	if err != nil {
+		return nil, err
+	}
+
+	return transactions, nil
 }
 
 type acquirerClient struct {

@@ -36,7 +36,7 @@ type StructuredLoggerEntry struct {
 }
 
 func (l *StructuredLoggerEntry) Write(status, bytes int, header http.Header, elapsed time.Duration, extra interface{}) {
-	l.Logger.Info("API request complete",
+	l.Logger.Info("http request",
 		slog.Int("resp_status", status),
 	)
 }

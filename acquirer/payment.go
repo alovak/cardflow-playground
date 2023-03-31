@@ -18,11 +18,12 @@ const (
 )
 
 type Payment struct {
-	ID         string
-	MerchantID string
-	Amount     int
-	Currency   string
-	Card       SafeCard
-	Status     PaymentStatus
-	CreatedAt  time.Time
+	ID                string
+	MerchantID        string
+	Amount            int
+	Currency          string
+	Card              SafeCard
+	Status            PaymentStatus
+	CreatedAt         time.Time
+	AuthorizationCode string
 }
