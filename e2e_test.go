@@ -5,15 +5,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"testing"
 	"time"
 
 	main "github.com/alovak/cardflow-playground"
 	"github.com/alovak/cardflow-playground/acquirer"
 	"github.com/alovak/cardflow-playground/issuer"
+	"github.com/alovak/cardflow-playground/log"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slog"
 )
 
 func TestEndToEndTransaction(t *testing.T) {
@@ -81,35 +80,19 @@ func TestEndToEndTransaction(t *testing.T) {
 	require.Equal(t, 10_00, account.HoldBalance)
 }
 
-// newLogger returns a new logger that removes time from the output for
-// predictable test output.
-func newLogger() *slog.Logger {
-	th := slog.HandlerOptions{
-		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
-			// Remove time from the output for predictable test output.
-			if a.Key == slog.TimeKey {
-				return slog.String("ts", time.Now().Format("15:04:05.000"))
-			}
-			return a
-		},
-	}.NewTextHandler(os.Stderr)
-
-	return slog.New(th)
-}
-
 func setupIssuer(t *testing.T) (string, string) {
-	issuerApp := main.NewIssuerApp(newLogger())
-	err := issuerApp.Start()
+	app := issuer.NewApp(log.New())
+	err := app.Start()
 	require.NoError(t, err)
 
 	// dont' forget to shutdown the issuer app
-	t.Cleanup(issuerApp.Shutdown)
+	t.Cleanup(app.Shutdown)
 
-	return fmt.Sprintf("http://%s", issuerApp.Addr), issuerApp.ISO8583ServerAddr
+	return fmt.Sprintf("http://%s", app.Addr), app.ISO8583ServerAddr
 }
 
 func setupAcquirer(t *testing.T, iso8583ServerAddr string) string {
-	acquirerApp := main.NewAcquirerApp(newLogger(), iso8583ServerAddr)
+	acquirerApp := main.NewAcquirerApp(log.New(), iso8583ServerAddr)
 	err := acquirerApp.Start()
 	require.NoError(t, err)
 

@@ -1,4 +1,4 @@
-package issuer
+package authorizer
 
 var (
 	ApprovalCodeApproved          = "00"

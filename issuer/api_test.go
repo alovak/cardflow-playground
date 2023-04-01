@@ -12,10 +12,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// Just a simple test
 func TestAPI(t *testing.T) {
 	router := chi.NewRouter()
 
-	api := issuer.NewAPI(issuer.NewIssuer(issuer.NewRepository()))
+	api := issuer.NewAPI(issuer.NewService(issuer.NewRepository()))
 	api.AppendRoutes(router)
 
 	t.Run("create account", func(t *testing.T) {

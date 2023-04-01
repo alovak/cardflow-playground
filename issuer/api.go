@@ -9,10 +9,10 @@ import (
 )
 
 type API struct {
-	issuer *Issuer
+	issuer *Service
 }
 
-func NewAPI(issuer *Issuer) *API {
+func NewAPI(issuer *Service) *API {
 	return &API{
 		issuer: issuer,
 	}

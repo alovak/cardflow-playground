@@ -6,20 +6,21 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/alovak/cardflow-playground/issuer/authorizer"
 	"github.com/google/uuid"
 )
 
-type Issuer struct {
+type Service struct {
 	repo Repository
 }
 
-func NewIssuer(repo Repository) *Issuer {
-	return &Issuer{
+func NewService(repo Repository) *Service {
+	return &Service{
 		repo: repo,
 	}
 }
 
-func (i *Issuer) CreateAccount(req CreateAccount) (*Account, error) {
+func (i *Service) CreateAccount(req CreateAccount) (*Account, error) {
 	account := &Account{
 		ID:               uuid.New().String(),
 		AvailableBalance: req.Balance,
@@ -34,7 +35,7 @@ func (i *Issuer) CreateAccount(req CreateAccount) (*Account, error) {
 	return account, nil
 }
 
-func (i *Issuer) GetAccount(accountID string) (*Account, error) {
+func (i *Service) GetAccount(accountID string) (*Account, error) {
 	account, err := i.repo.GetAccount(accountID)
 	if err != nil {
 		return nil, fmt.Errorf("finding account: %w", err)
@@ -43,7 +44,7 @@ func (i *Issuer) GetAccount(accountID string) (*Account, error) {
 	return account, nil
 }
 
-func (i *Issuer) IssueCard(accountID string) (*Card, error) {
+func (i *Service) IssueCard(accountID string) (*Card, error) {
 	card := &Card{
 		ID:                    uuid.New().String(),
 		AccountID:             accountID,
@@ -61,7 +62,7 @@ func (i *Issuer) IssueCard(accountID string) (*Card, error) {
 }
 
 // ListTransactions returns a list of transactions for the given account ID.
-func (i *Issuer) ListTransactions(accountID string) ([]*Transaction, error) {
+func (i *Service) ListTransactions(accountID string) ([]*Transaction, error) {
 	transactions, err := i.repo.ListTransactions(accountID)
 	if err != nil {
 		return nil, fmt.Errorf("listing transactions: %w", err)
@@ -70,21 +71,21 @@ func (i *Issuer) ListTransactions(accountID string) ([]*Transaction, error) {
 	return transactions, nil
 }
 
-func (i *Issuer) AuthorizeRequest(req AuthorizationRequest) (AuthorizationResponse, error) {
+func (i *Service) AuthorizeRequest(req authorizer.AuthorizationRequest) (authorizer.AuthorizationResponse, error) {
 	card, err := i.repo.FindCardForAuthorization(req.Card)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			return AuthorizationResponse{
-				ApprovalCode: ApprovalCodeInvalidCard,
+			return authorizer.AuthorizationResponse{
+				ApprovalCode: authorizer.ApprovalCodeInvalidCard,
 			}, nil
 		}
 
-		return AuthorizationResponse{}, fmt.Errorf("finding card: %w", err)
+		return authorizer.AuthorizationResponse{}, fmt.Errorf("finding card: %w", err)
 	}
 
 	account, err := i.repo.GetAccount(card.AccountID)
 	if err != nil {
-		return AuthorizationResponse{}, fmt.Errorf("finding account: %w", err)
+		return authorizer.AuthorizationResponse{}, fmt.Errorf("finding account: %w", err)
 	}
 
 	transaction := &Transaction{
@@ -97,7 +98,7 @@ func (i *Issuer) AuthorizeRequest(req AuthorizationRequest) (AuthorizationRespon
 
 	err = i.repo.CreateTransaction(transaction)
 	if err != nil {
-		return AuthorizationResponse{}, fmt.Errorf("creating transaction: %w", err)
+		return authorizer.AuthorizationResponse{}, fmt.Errorf("creating transaction: %w", err)
 	}
 
 	// hold the funds on the account
@@ -105,19 +106,19 @@ func (i *Issuer) AuthorizeRequest(req AuthorizationRequest) (AuthorizationRespon
 	if err != nil {
 		// handle insufficient funds
 		if !errors.Is(err, ErrInsufficientFunds) {
-			return AuthorizationResponse{}, fmt.Errorf("holding funds: %w", err)
+			return authorizer.AuthorizationResponse{}, fmt.Errorf("holding funds: %w", err)
 		}
 
-		return AuthorizationResponse{
-			ApprovalCode: ApprovalCodeInsufficientFunds,
+		return authorizer.AuthorizationResponse{
+			ApprovalCode: authorizer.ApprovalCodeInsufficientFunds,
 		}, nil
 	}
 
-	transaction.ApprovalCode = ApprovalCodeApproved
+	transaction.ApprovalCode = authorizer.ApprovalCodeApproved
 	transaction.AuthorizationCode = generateAuthorizationCode()
 	transaction.Status = TransactionStatusAuthorized
 
-	return AuthorizationResponse{
+	return authorizer.AuthorizationResponse{
 		AuthorizationCode: transaction.AuthorizationCode,
 		ApprovalCode:      transaction.ApprovalCode,
 	}, nil

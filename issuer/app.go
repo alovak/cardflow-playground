@@ -1,4 +1,4 @@
-package main
+package issuer
 
 import (
 	"context"
@@ -6,18 +6,16 @@ import (
 	"io"
 	"net"
 	"net/http"
-	"os"
-	"os/signal"
 	"sync"
 
 	"github.com/alovak/cardflow-playground/internal/middleware"
-	"github.com/alovak/cardflow-playground/issuer"
+	// "github.com/alovak/cardflow-playground/issuer"
 	issuer8583 "github.com/alovak/cardflow-playground/issuer/iso8583"
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/exp/slog"
 )
 
-type IssuerApp struct {
+type App struct {
 	srv               *http.Server
 	wg                *sync.WaitGroup
 	Addr              string
@@ -26,37 +24,23 @@ type IssuerApp struct {
 	iso8583Server     io.Closer
 }
 
-func NewIssuerApp(logger *slog.Logger) *IssuerApp {
+func NewApp(logger *slog.Logger) *App {
 	logger = logger.With(slog.String("app", "issuer"))
 
-	return &IssuerApp{
+	return &App{
 		wg:     &sync.WaitGroup{},
 		logger: logger,
 	}
 }
 
-func (a *IssuerApp) Run() {
-	if err := a.Start(); err != nil {
-		a.logger.Error("Error starting app", "err", err)
-		os.Exit(1)
-	}
-
-	// Wait for interrupt signal to gracefully shutdown the app with all services
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	<-c
-
-	a.Shutdown()
-}
-
-func (a *IssuerApp) Start() error {
+func (a *App) Start() error {
 	a.logger.Info("starting app...")
 
 	// setup the issuer
 	router := chi.NewRouter()
 	router.Use(middleware.NewStructuredLogger(a.logger))
-	repository := issuer.NewRepository()
-	iss := issuer.NewIssuer(repository)
+	repository := NewRepository()
+	iss := NewService(repository)
 
 	iso8583Server := issuer8583.NewServer(a.logger, "127.0.0.1:0", iss)
 	err := iso8583Server.Start()
@@ -66,7 +50,7 @@ func (a *IssuerApp) Start() error {
 	a.ISO8583ServerAddr = iso8583Server.Addr
 	a.iso8583Server = iso8583Server
 
-	api := issuer.NewAPI(iss)
+	api := NewAPI(iss)
 	api.AppendRoutes(router)
 
 	l, err := net.Listen("tcp", "127.0.0.1:0")
@@ -98,7 +82,7 @@ func (a *IssuerApp) Start() error {
 	return nil
 }
 
-func (a *IssuerApp) Shutdown() {
+func (a *App) Shutdown() {
 	a.logger.Info("shutting down app...")
 
 	a.srv.Shutdown(context.Background())

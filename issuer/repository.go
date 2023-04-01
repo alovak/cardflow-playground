@@ -3,6 +3,8 @@ package issuer
 import (
 	"fmt"
 	"sync"
+
+	"github.com/alovak/cardflow-playground/issuer/authorizer"
 )
 
 var ErrNotFound = fmt.Errorf("not found")
@@ -12,7 +14,7 @@ type Repository interface {
 	GetAccount(accountID string) (*Account, error)
 	CreateCard(card *Card) error
 	ListTransactions(accountID string) ([]*Transaction, error)
-	FindCardForAuthorization(card Card) (*Card, error)
+	FindCardForAuthorization(card authorizer.Card) (*Card, error)
 	CreateTransaction(transaction *Transaction) error
 }
 
@@ -63,7 +65,7 @@ func (r *repository) CreateCard(card *Card) error {
 	return nil
 }
 
-func (r *repository) FindCardForAuthorization(card Card) (*Card, error) {
+func (r *repository) FindCardForAuthorization(card authorizer.Card) (*Card, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/alovak/cardflow-playground/issuer"
+	"github.com/alovak/cardflow-playground/issuer/authorizer"
 	"github.com/moov-io/iso8583"
 	iso8583Connection "github.com/moov-io/iso8583-connection"
 	iso8583Server "github.com/moov-io/iso8583-connection/server"
@@ -12,19 +12,15 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-type Authorizer interface {
-	AuthorizeRequest(req issuer.AuthorizationRequest) (issuer.AuthorizationResponse, error)
-}
-
 type server struct {
 	Addr string
 
 	server     *iso8583Server.Server
 	logger     *slog.Logger
-	authorizer Authorizer
+	authorizer authorizer.Authorizer
 }
 
-func NewServer(logger *slog.Logger, addr string, authorizer Authorizer) *server {
+func NewServer(logger *slog.Logger, addr string, authorizer authorizer.Authorizer) *server {
 	logger = logger.With(slog.String("type", "iso8583-server"), slog.String("addr", addr))
 
 	s := &server{
@@ -112,10 +108,10 @@ func (s *server) handleAuthorizationRequest(c *iso8583Connection.Connection, mes
 		return fmt.Errorf("parsing amount: %w", err)
 	}
 
-	authRequest := issuer.AuthorizationRequest{
+	authRequest := authorizer.AuthorizationRequest{
 		Amount:   amount,
 		Currency: requestData.Currency.Value(),
-		Card: issuer.Card{
+		Card: authorizer.Card{
 			Number:                requestData.PrimaryAccountNumber.Value(),
 			ExpirationDate:        requestData.ExpirationDate.Value(),
 			CardVerificationValue: requestData.CardVerificationValue.Value(),
@@ -131,7 +127,7 @@ func (s *server) handleAuthorizationRequest(c *iso8583Connection.Connection, mes
 		responseData = &AuthorizationResponse{
 			MTI:          field.NewStringValue("0110"),
 			STAN:         field.NewStringValue(requestData.STAN.Value()),
-			ApprovalCode: field.NewStringValue(issuer.ApprovalCodeSystemError),
+			ApprovalCode: field.NewStringValue(authorizer.ApprovalCodeSystemError),
 		}
 	} else {
 		responseData = &AuthorizationResponse{
