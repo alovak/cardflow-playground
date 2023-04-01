@@ -2,6 +2,7 @@ package issuer
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -21,6 +22,7 @@ func (a *API) AppendRoutes(r chi.Router) {
 	r.Route("/accounts", func(r chi.Router) {
 		r.Post("/", a.createAccount)
 		r.Route("/{accountID}", func(r chi.Router) {
+			r.Get("/", a.getAccount)
 			r.Post("/cards", a.issueCard)
 			r.Get("/transactions", a.getTransactions)
 		})
@@ -42,6 +44,23 @@ func (a *API) createAccount(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(account)
+}
+
+func (a *API) getAccount(w http.ResponseWriter, r *http.Request) {
+	accountID := chi.URLParam(r, "accountID")
+
+	account, err := a.issuer.GetAccount(accountID)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+		} else {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(account)
 }
 

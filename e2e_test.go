@@ -74,8 +74,11 @@ func TestEndToEndTransaction(t *testing.T) {
 	require.Equal(t, payment.AuthorizationCode, transactions[0].AuthorizationCode)
 
 	// Account's available balance should be less by the transaction amount
+	account, err := issuerClient.GetAccount(accountID)
+	require.NoError(t, err)
 
-	// Account's hold balance should be equal to the transaction amount
+	require.Equal(t, 100_00-10_00, account.AvailableBalance)
+	require.Equal(t, 10_00, account.HoldBalance)
 }
 
 // newLogger returns a new logger that removes time from the output for
@@ -158,6 +161,26 @@ func (i *issuerClient) CreateAccount(req issuer.CreateAccount) (string, error) {
 	}
 
 	return account.ID, nil
+}
+
+// GetAccount returns the account for the given account ID or an error.
+func (i *issuerClient) GetAccount(accountID string) (issuer.Account, error) {
+	res, err := i.httpClient.Get(i.baseURL + "/accounts/" + accountID)
+	if err != nil {
+		return issuer.Account{}, err
+	}
+
+	if res.StatusCode != http.StatusOK {
+		return issuer.Account{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusOK)
+	}
+
+	var account issuer.Account
+	err = json.NewDecoder(res.Body).Decode(&account)
+	if err != nil {
+		return issuer.Account{}, err
+	}
+
+	return account, nil
 }
 
 // IssueCard issues a new card for the given account ID and returns the card or

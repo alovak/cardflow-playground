@@ -122,16 +122,24 @@ func (s *server) handleAuthorizationRequest(c *iso8583Connection.Connection, mes
 		},
 	}
 
+	var responseData *AuthorizationResponse
+
 	authResponse, err := s.authorizer.AuthorizeRequest(authRequest)
 	if err != nil {
 		return fmt.Errorf("authorizing request: %w", err)
-	}
 
-	responseData := &AuthorizationResponse{
-		MTI:               field.NewStringValue("0110"),
-		STAN:              field.NewStringValue(requestData.STAN.Value()),
-		ApprovalCode:      field.NewStringValue(authResponse.ApprovalCode),
-		AuthorizationCode: field.NewStringValue(authResponse.AuthorizationCode),
+		responseData = &AuthorizationResponse{
+			MTI:          field.NewStringValue("0110"),
+			STAN:         field.NewStringValue(requestData.STAN.Value()),
+			ApprovalCode: field.NewStringValue(issuer.ApprovalCodeSystemError),
+		}
+	} else {
+		responseData = &AuthorizationResponse{
+			MTI:               field.NewStringValue("0110"),
+			STAN:              field.NewStringValue(requestData.STAN.Value()),
+			ApprovalCode:      field.NewStringValue(authResponse.ApprovalCode),
+			AuthorizationCode: field.NewStringValue(authResponse.AuthorizationCode),
+		}
 	}
 
 	responseMessage := iso8583.NewMessage(spec)

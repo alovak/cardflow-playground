@@ -51,6 +51,7 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 			Description: "Approval Code",
 			Enc:         encoding.ASCII,
 			Pref:        prefix.ASCII.Fixed,
+			Pad:         padding.Left('0'),
 		}),
 		6: field.NewString(&field.Spec{
 			Length:      6,

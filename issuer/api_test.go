@@ -36,7 +36,7 @@ func TestAPI(t *testing.T) {
 		err := json.Unmarshal(w.Body.Bytes(), &account)
 		require.NoError(t, err)
 
-		require.Equal(t, create.Balance, account.Balance)
+		require.Equal(t, create.Balance, account.AvailableBalance)
 		require.Equal(t, create.Currency, account.Currency)
 		require.NotEmpty(t, account.ID)
 	})

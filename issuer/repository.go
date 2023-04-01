@@ -9,6 +9,7 @@ var ErrNotFound = fmt.Errorf("not found")
 
 type Repository interface {
 	CreateAccount(account *Account) error
+	GetAccount(accountID string) (*Account, error)
 	CreateCard(card *Card) error
 	ListTransactions(accountID string) ([]*Transaction, error)
 	FindCardForAuthorization(card Card) (*Card, error)
@@ -38,6 +39,19 @@ func (r *repository) CreateAccount(account *Account) error {
 	r.Accounts = append(r.Accounts, account)
 
 	return nil
+}
+
+func (r *repository) GetAccount(accountID string) (*Account, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, account := range r.Accounts {
+		if account.ID == accountID {
+			return account, nil
+		}
+	}
+
+	return nil, ErrNotFound
 }
 
 func (r *repository) CreateCard(card *Card) error {

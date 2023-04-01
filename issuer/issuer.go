@@ -1,6 +1,7 @@
 package issuer
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"time"
@@ -20,14 +21,23 @@ func NewIssuer(repo Repository) *Issuer {
 
 func (i *Issuer) CreateAccount(req CreateAccount) (*Account, error) {
 	account := &Account{
-		ID:       uuid.New().String(),
-		Balance:  req.Balance,
-		Currency: req.Currency,
+		ID:               uuid.New().String(),
+		AvailableBalance: req.Balance,
+		Currency:         req.Currency,
 	}
 
 	err := i.repo.CreateAccount(account)
 	if err != nil {
 		return nil, fmt.Errorf("creating account: %w", err)
+	}
+
+	return account, nil
+}
+
+func (i *Issuer) GetAccount(accountID string) (*Account, error) {
+	account, err := i.repo.GetAccount(accountID)
+	if err != nil {
+		return nil, fmt.Errorf("finding account: %w", err)
 	}
 
 	return account, nil
@@ -63,13 +73,18 @@ func (i *Issuer) ListTransactions(accountID string) ([]*Transaction, error) {
 func (i *Issuer) AuthorizeRequest(req AuthorizationRequest) (AuthorizationResponse, error) {
 	card, err := i.repo.FindCardForAuthorization(req.Card)
 	if err != nil {
-		if err == ErrNotFound {
+		if errors.Is(err, ErrNotFound) {
 			return AuthorizationResponse{
-				ApprovalCode: ApprovalCodeCardInvalid,
+				ApprovalCode: ApprovalCodeInvalidCard,
 			}, nil
 		}
 
 		return AuthorizationResponse{}, fmt.Errorf("finding card: %w", err)
+	}
+
+	account, err := i.repo.GetAccount(card.AccountID)
+	if err != nil {
+		return AuthorizationResponse{}, fmt.Errorf("finding account: %w", err)
 	}
 
 	transaction := &Transaction{
@@ -85,14 +100,21 @@ func (i *Issuer) AuthorizeRequest(req AuthorizationRequest) (AuthorizationRespon
 		return AuthorizationResponse{}, fmt.Errorf("creating transaction: %w", err)
 	}
 
-	// find the account
-	// check if the account has enough balance
+	// hold the funds on the account
+	err = account.Hold(req.Amount)
+	if err != nil {
+		// handle insufficient funds
+		if !errors.Is(err, ErrInsufficientFunds) {
+			return AuthorizationResponse{}, fmt.Errorf("holding funds: %w", err)
+		}
 
-	// if no, return a insufficient funds error
+		return AuthorizationResponse{
+			ApprovalCode: ApprovalCodeInsufficientFunds,
+		}, nil
+	}
 
-	// if yes, create transaction for card and return an approval code
 	transaction.ApprovalCode = ApprovalCodeApproved
-	transaction.AuthorizationCode = "123456"
+	transaction.AuthorizationCode = generateAuthorizationCode()
 	transaction.Status = TransactionStatusAuthorized
 
 	return AuthorizationResponse{
@@ -104,19 +126,26 @@ func (i *Issuer) AuthorizeRequest(req AuthorizationRequest) (AuthorizationRespon
 // generateFakeCardNumber generates a fake card number starting with 9
 // and a random 15-digit number. This is not a valid card number.
 func generateFakeCardNumber() string {
+	return fmt.Sprintf("9%s", generateRandomNumber(15))
+}
+
+func generateAuthorizationCode() string {
+	return generateRandomNumber(6)
+}
+
+func generateRandomNumber(length int) string {
 	rand.Seed(time.Now().UnixNano())
 
-	// Generate a 15-digit random number starting with 9
-	randomDigits := make([]int, 16)
-	randomDigits[0] = 9
-	for i := 1; i < len(randomDigits); i++ {
+	// Generate a 6-digit random number
+	randomDigits := make([]int, length)
+	for i := 0; i < len(randomDigits); i++ {
 		randomDigits[i] = rand.Intn(10)
 	}
 
-	var cardNumber string
+	var number string
 	for _, digit := range randomDigits {
-		cardNumber += fmt.Sprintf("%d", digit)
+		number += fmt.Sprintf("%d", digit)
 	}
 
-	return cardNumber
+	return number
 }

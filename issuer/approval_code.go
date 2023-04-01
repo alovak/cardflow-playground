@@ -3,6 +3,8 @@ package issuer
 var (
 	ApprovalCodeApproved          = "00"
 	ApprovalCodeDeclined          = "05"
-	ApprovalCodeCardInvalid       = "14"
+	ApprovalCodeInvalidRequest    = "10"
+	ApprovalCodeInvalidCard       = "14"
 	ApprovalCodeInsufficientFunds = "51"
+	ApprovalCodeSystemError       = "99"
 )
