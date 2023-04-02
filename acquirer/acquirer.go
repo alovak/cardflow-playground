@@ -8,7 +8,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Acquirer struct {
+type Service struct {
 	repo          Repository
 	iso8583Client ISO8583Client
 }
@@ -17,14 +17,14 @@ type ISO8583Client interface {
 	AuthorizePayment(payment *models.Payment, card models.Card) (models.AuthorizationResponse, error)
 }
 
-func NewAcquirer(repo Repository, iso8583Client ISO8583Client) *Acquirer {
-	return &Acquirer{
+func NewService(repo Repository, iso8583Client ISO8583Client) *Service {
+	return &Service{
 		repo:          repo,
 		iso8583Client: iso8583Client,
 	}
 }
 
-func (a *Acquirer) CreateMerchant(create models.CreateMerchant) (*models.Merchant, error) {
+func (a *Service) CreateMerchant(create models.CreateMerchant) (*models.Merchant, error) {
 	merchant := &models.Merchant{
 		ID:         uuid.New().String(),
 		Name:       create.Name,
@@ -41,7 +41,7 @@ func (a *Acquirer) CreateMerchant(create models.CreateMerchant) (*models.Merchan
 	return merchant, nil
 }
 
-func (a *Acquirer) CreatePayment(merchantID string, create models.CreatePayment) (*models.Payment, error) {
+func (a *Service) CreatePayment(merchantID string, create models.CreatePayment) (*models.Payment, error) {
 	payment := &models.Payment{
 		ID:         uuid.New().String(),
 		MerchantID: merchantID,
@@ -79,7 +79,7 @@ func (a *Acquirer) CreatePayment(merchantID string, create models.CreatePayment)
 	return payment, nil
 }
 
-func (a *Acquirer) GetPayment(merchantID, paymentID string) (*models.Payment, error) {
+func (a *Service) GetPayment(merchantID, paymentID string) (*models.Payment, error) {
 	payment, err := a.repo.GetPayment(merchantID, paymentID)
 	if err != nil {
 		return nil, fmt.Errorf("getting payment: %w", err)

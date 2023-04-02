@@ -11,11 +11,11 @@ import (
 )
 
 type API struct {
-	acquirer *Acquirer
+	acquirer *Service
 	logger   *slog.Logger
 }
 
-func NewAPI(logger *slog.Logger, acquirer *Acquirer) *API {
+func NewAPI(logger *slog.Logger, acquirer *Service) *API {
 	return &API{
 		logger:   logger,
 		acquirer: acquirer,

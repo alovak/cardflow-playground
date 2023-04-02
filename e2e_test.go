@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	main "github.com/alovak/cardflow-playground"
+	"github.com/alovak/cardflow-playground/acquirer"
 	acquirerClient "github.com/alovak/cardflow-playground/acquirer/client"
 	"github.com/alovak/cardflow-playground/acquirer/models"
 	"github.com/alovak/cardflow-playground/issuer"
@@ -93,14 +93,14 @@ func setupIssuer(t *testing.T) (string, string) {
 }
 
 func setupAcquirer(t *testing.T, iso8583ServerAddr string) string {
-	acquirerApp := main.NewAcquirerApp(log.New(), iso8583ServerAddr)
-	err := acquirerApp.Start()
+	app := acquirer.NewApp(log.New(), iso8583ServerAddr)
+	err := app.Start()
 	require.NoError(t, err)
 
 	// dont' forget to shutdown the acquirer app
-	t.Cleanup(acquirerApp.Shutdown)
+	t.Cleanup(app.Shutdown)
 
-	return fmt.Sprintf("http://%s", acquirerApp.Addr)
+	return fmt.Sprintf("http://%s", app.Addr)
 }
 
 type issuerClient struct {
