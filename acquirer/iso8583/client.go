@@ -56,17 +56,13 @@ func (c *Client) Connect() error {
 func (c *Client) AuthorizePayment(payment *acquirer.Payment, card acquirer.Card) (acquirer.AuthorizationResponse, error) {
 	c.logger.Info("authorizing payment", slog.String("payment_id", payment.ID))
 
-	t := payment.CreatedAt.Format(time.RFC3339)
-
-	c.logger.Info("transmission date time", "value", t, "len", len(t), "format", time.RFC3339)
-
 	requestMessage := iso8583.NewMessage(spec)
 	requestData := &AuthorizationRequest{
 		MTI:                   field.NewStringValue("0100"),
 		PrimaryAccountNumber:  field.NewStringValue(card.Number),
 		Amount:                field.NewStringValue(fmt.Sprintf("%d", payment.Amount)),
 		Currency:              field.NewStringValue(payment.Currency),
-		TransmissionDateTime:  field.NewStringValue(payment.CreatedAt.Format(time.RFC3339)),
+		TransmissionDateTime:  field.NewStringValue(payment.CreatedAt.UTC().Format(time.RFC3339)),
 		STAN:                  field.NewStringValue(c.stanGenerator.Next()),
 		CardVerificationValue: field.NewStringValue(card.CardVerificationValue),
 		ExpirationDate:        field.NewStringValue(card.ExpirationDate),

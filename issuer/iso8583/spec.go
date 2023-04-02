@@ -41,7 +41,7 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 			Pad:         padding.Left('0'),
 		}),
 		4: field.NewString(&field.Spec{
-			Length:      25,
+			Length:      20,
 			Description: "Transmission Date & Time",
 			Enc:         encoding.ASCII,
 			Pref:        prefix.ASCII.Fixed,
