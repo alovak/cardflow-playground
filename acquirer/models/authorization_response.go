@@ -1,4 +1,4 @@
-package acquirer
+package models
 
 type AuthorizationResponse struct {
 	ApprovalCode      string

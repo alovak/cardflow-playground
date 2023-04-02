@@ -1,4 +1,4 @@
-package acquirer
+package models
 
 import "time"
 

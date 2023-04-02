@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/alovak/cardflow-playground/acquirer/models"
 	"github.com/google/uuid"
 )
 
@@ -13,7 +14,7 @@ type Acquirer struct {
 }
 
 type ISO8583Client interface {
-	AuthorizePayment(payment *Payment, card Card) (AuthorizationResponse, error)
+	AuthorizePayment(payment *models.Payment, card models.Card) (models.AuthorizationResponse, error)
 }
 
 func NewAcquirer(repo Repository, iso8583Client ISO8583Client) *Acquirer {
@@ -23,8 +24,8 @@ func NewAcquirer(repo Repository, iso8583Client ISO8583Client) *Acquirer {
 	}
 }
 
-func (a *Acquirer) CreateMerchant(create CreateMerchant) (*Merchant, error) {
-	merchant := &Merchant{
+func (a *Acquirer) CreateMerchant(create models.CreateMerchant) (*models.Merchant, error) {
+	merchant := &models.Merchant{
 		ID:         uuid.New().String(),
 		Name:       create.Name,
 		MCC:        create.MCC,
@@ -40,18 +41,18 @@ func (a *Acquirer) CreateMerchant(create CreateMerchant) (*Merchant, error) {
 	return merchant, nil
 }
 
-func (a *Acquirer) CreatePayment(merchantID string, create CreatePayment) (*Payment, error) {
-	payment := &Payment{
+func (a *Acquirer) CreatePayment(merchantID string, create models.CreatePayment) (*models.Payment, error) {
+	payment := &models.Payment{
 		ID:         uuid.New().String(),
 		MerchantID: merchantID,
 		Amount:     create.Amount,
 		Currency:   create.Currency,
-		Card: SafeCard{
+		Card: models.SafeCard{
 			First6:         create.Card.Number[:6],
 			Last4:          create.Card.Number[len(create.Card.Number)-4:],
 			ExpirationDate: create.Card.ExpirationDate,
 		},
-		Status:    PaymentStatusPending,
+		Status:    models.PaymentStatusPending,
 		CreatedAt: time.Now(),
 	}
 
@@ -62,7 +63,7 @@ func (a *Acquirer) CreatePayment(merchantID string, create CreatePayment) (*Paym
 
 	response, err := a.iso8583Client.AuthorizePayment(payment, create.Card)
 	if err != nil {
-		payment.Status = PaymentStatusError
+		payment.Status = models.PaymentStatusError
 		// update payment details
 		return nil, fmt.Errorf("authorizing payment: %w", err)
 	}
@@ -70,15 +71,15 @@ func (a *Acquirer) CreatePayment(merchantID string, create CreatePayment) (*Paym
 	payment.AuthorizationCode = response.AuthorizationCode
 
 	if response.ApprovalCode == "00" {
-		payment.Status = PaymentStatusAuthorized
+		payment.Status = models.PaymentStatusAuthorized
 	} else {
-		payment.Status = PaymentStatusDeclined
+		payment.Status = models.PaymentStatusDeclined
 	}
 
 	return payment, nil
 }
 
-func (a *Acquirer) GetPayment(merchantID, paymentID string) (*Payment, error) {
+func (a *Acquirer) GetPayment(merchantID, paymentID string) (*models.Payment, error) {
 	payment, err := a.repo.GetPayment(merchantID, paymentID)
 	if err != nil {
 		return nil, fmt.Errorf("getting payment: %w", err)

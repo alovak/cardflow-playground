@@ -9,7 +9,7 @@ import (
 	"time"
 
 	main "github.com/alovak/cardflow-playground"
-	"github.com/alovak/cardflow-playground/acquirer"
+	"github.com/alovak/cardflow-playground/acquirer/models"
 	"github.com/alovak/cardflow-playground/issuer"
 	"github.com/alovak/cardflow-playground/log"
 	"github.com/stretchr/testify/require"
@@ -36,7 +36,7 @@ func TestEndToEndTransaction(t *testing.T) {
 	require.NoError(t, err)
 
 	// Given: Create a new merchant for the acquirer
-	merchant, err := acquirerClient.CreateMerchant(acquirer.CreateMerchant{
+	merchant, err := acquirerClient.CreateMerchant(models.CreateMerchant{
 		Name:       "Demo Merchant",
 		MCC:        "5411",
 		PostalCode: "12345",
@@ -45,8 +45,8 @@ func TestEndToEndTransaction(t *testing.T) {
 	require.NoError(t, err)
 
 	// When: Acquirer receives the payment request for the merchant with the issued card
-	payment, err := acquirerClient.CreatePayment(merchant.ID, acquirer.CreatePayment{
-		Card: acquirer.Card{
+	payment, err := acquirerClient.CreatePayment(merchant.ID, models.CreatePayment{
+		Card: models.Card{
 			Number:                card.Number,
 			CardVerificationValue: card.CardVerificationValue,
 			ExpirationDate:        card.ExpirationDate,
@@ -59,7 +59,7 @@ func TestEndToEndTransaction(t *testing.T) {
 	// Then: There should be an authorized transaction in the acquirer
 	payment, err = acquirerClient.GetPayment(merchant.ID, payment.ID)
 	require.NoError(t, err)
-	require.Equal(t, acquirer.PaymentStatusAuthorized, payment.Status)
+	require.Equal(t, models.PaymentStatusAuthorized, payment.Status)
 
 	// In the issuer, there should be an authorized transaction for the card
 	transactions, err := issuerClient.GetTransactions(accountID)
@@ -226,68 +226,68 @@ func NewAcquirerClient(baseURL string) *acquirerClient {
 	}
 }
 
-func (c *acquirerClient) CreateMerchant(req acquirer.CreateMerchant) (acquirer.Merchant, error) {
+func (c *acquirerClient) CreateMerchant(req models.CreateMerchant) (models.Merchant, error) {
 	reqJSON, err := json.Marshal(req)
 	if err != nil {
-		return acquirer.Merchant{}, err
+		return models.Merchant{}, err
 	}
 
 	res, err := c.httpClient.Post(c.baseURL+"/merchants", "application/json", bytes.NewReader(reqJSON))
 	if err != nil {
-		return acquirer.Merchant{}, err
+		return models.Merchant{}, err
 	}
 
 	if res.StatusCode != http.StatusCreated {
-		return acquirer.Merchant{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
+		return models.Merchant{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
 	}
 
-	var merchant acquirer.Merchant
+	var merchant models.Merchant
 	err = json.NewDecoder(res.Body).Decode(&merchant)
 	if err != nil {
-		return acquirer.Merchant{}, err
+		return models.Merchant{}, err
 	}
 
 	return merchant, nil
 }
 
-func (c *acquirerClient) CreatePayment(merchantID string, req acquirer.CreatePayment) (acquirer.Payment, error) {
+func (c *acquirerClient) CreatePayment(merchantID string, req models.CreatePayment) (models.Payment, error) {
 	reqJSON, err := json.Marshal(req)
 	if err != nil {
-		return acquirer.Payment{}, err
+		return models.Payment{}, err
 	}
 
 	res, err := c.httpClient.Post(c.baseURL+"/merchants/"+merchantID+"/payments", "application/json", bytes.NewReader(reqJSON))
 	if err != nil {
-		return acquirer.Payment{}, err
+		return models.Payment{}, err
 	}
 
 	if res.StatusCode != http.StatusCreated {
-		return acquirer.Payment{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
+		return models.Payment{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
 	}
 
-	var payment acquirer.Payment
+	var payment models.Payment
 	err = json.NewDecoder(res.Body).Decode(&payment)
 	if err != nil {
-		return acquirer.Payment{}, err
+		return models.Payment{}, err
 	}
 
 	return payment, nil
 }
 
-func (c *acquirerClient) GetPayment(merchantID, paymentID string) (acquirer.Payment, error) {
+func (c *acquirerClient) GetPayment(merchantID, paymentID string) (models.Payment, error) {
 	res, err := c.httpClient.Get(c.baseURL + "/merchants/" + merchantID + "/payments/" + paymentID)
 	if err != nil {
-		return acquirer.Payment{}, err
+		return models.Payment{}, err
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return acquirer.Payment{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusOK)
+		return models.Payment{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusOK)
 	}
 
-	var payment acquirer.Payment
+	var payment models.Payment
 	err = json.NewDecoder(res.Body).Decode(&payment)
 	if err != nil {
-		return acquirer.Payment{}, err
+		return models.Payment{}, err
 	}
 
 	return payment, nil

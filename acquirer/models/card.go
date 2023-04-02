@@ -1,4 +1,4 @@
-package acquirer
+package models
 
 type Card struct {
 	Number                string

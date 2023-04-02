@@ -3,31 +3,33 @@ package acquirer
 import (
 	"fmt"
 	"sync"
+
+	"github.com/alovak/cardflow-playground/acquirer/models"
 )
 
 var ErrNotFound = fmt.Errorf("not found")
 
 type Repository interface {
-	CreateMerchant(merchant *Merchant) error
-	CreatePayment(payment *Payment) error
-	GetPayment(merchantID, paymentID string) (*Payment, error)
+	CreateMerchant(merchant *models.Merchant) error
+	CreatePayment(payment *models.Payment) error
+	GetPayment(merchantID, paymentID string) (*models.Payment, error)
 }
 
 type repository struct {
 	mu sync.RWMutex
 
-	merchants map[string]*Merchant
-	payments  map[string]*Payment
+	merchants map[string]*models.Merchant
+	payments  map[string]*models.Payment
 }
 
 func NewRepository() *repository {
 	return &repository{
-		merchants: make(map[string]*Merchant),
-		payments:  make(map[string]*Payment),
+		merchants: make(map[string]*models.Merchant),
+		payments:  make(map[string]*models.Payment),
 	}
 }
 
-func (r *repository) CreateMerchant(merchant *Merchant) error {
+func (r *repository) CreateMerchant(merchant *models.Merchant) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -36,7 +38,7 @@ func (r *repository) CreateMerchant(merchant *Merchant) error {
 	return nil
 }
 
-func (r *repository) CreatePayment(payment *Payment) error {
+func (r *repository) CreatePayment(payment *models.Payment) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -45,7 +47,7 @@ func (r *repository) CreatePayment(payment *Payment) error {
 	return nil
 }
 
-func (r *repository) GetPayment(merchantID, paymentID string) (*Payment, error) {
+func (r *repository) GetPayment(merchantID, paymentID string) (*models.Payment, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

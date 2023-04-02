@@ -1,4 +1,4 @@
-package acquirer
+package models
 
 type CreateMerchant struct {
 	Name       string

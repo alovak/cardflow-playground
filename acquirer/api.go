@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/alovak/cardflow-playground/acquirer/models"
 	"github.com/go-chi/chi/v5"
 	"golang.org/x/exp/slog"
 )
@@ -32,7 +33,7 @@ func (a *API) AppendRoutes(r chi.Router) {
 }
 
 func (a *API) createMerchant(w http.ResponseWriter, r *http.Request) {
-	create := CreateMerchant{}
+	create := models.CreateMerchant{}
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -52,7 +53,7 @@ func (a *API) createMerchant(w http.ResponseWriter, r *http.Request) {
 func (a *API) createPayment(w http.ResponseWriter, r *http.Request) {
 	merchantID := chi.URLParam(r, "merchantID")
 
-	create := CreatePayment{}
+	create := models.CreatePayment{}
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)

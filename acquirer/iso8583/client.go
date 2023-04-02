@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/alovak/cardflow-playground/acquirer"
+	"github.com/alovak/cardflow-playground/acquirer/models"
 	"github.com/moov-io/iso8583"
 	iso8583Connection "github.com/moov-io/iso8583-connection"
 	"github.com/moov-io/iso8583/field"
@@ -53,7 +53,7 @@ func (c *Client) Connect() error {
 	return nil
 }
 
-func (c *Client) AuthorizePayment(payment *acquirer.Payment, card acquirer.Card) (acquirer.AuthorizationResponse, error) {
+func (c *Client) AuthorizePayment(payment *models.Payment, card models.Card) (models.AuthorizationResponse, error) {
 	c.logger.Info("authorizing payment", slog.String("payment_id", payment.ID))
 
 	requestMessage := iso8583.NewMessage(spec)
@@ -70,21 +70,21 @@ func (c *Client) AuthorizePayment(payment *acquirer.Payment, card acquirer.Card)
 
 	err := requestMessage.Marshal(requestData)
 	if err != nil {
-		return acquirer.AuthorizationResponse{}, fmt.Errorf("marshaling request data: %w", err)
+		return models.AuthorizationResponse{}, fmt.Errorf("marshaling request data: %w", err)
 	}
 
 	responseMessage, err := c.iso8583Connection.Send(requestMessage)
 	if err != nil {
-		return acquirer.AuthorizationResponse{}, fmt.Errorf("sending ISO 8583 message to server: %w", err)
+		return models.AuthorizationResponse{}, fmt.Errorf("sending ISO 8583 message to server: %w", err)
 	}
 
 	responseData := &AuthorizationResponse{}
 	err = responseMessage.Unmarshal(responseData)
 	if err != nil {
-		return acquirer.AuthorizationResponse{}, fmt.Errorf("unmarshaling response data: %w", err)
+		return models.AuthorizationResponse{}, fmt.Errorf("unmarshaling response data: %w", err)
 	}
 
-	return acquirer.AuthorizationResponse{
+	return models.AuthorizationResponse{
 		ApprovalCode:      responseData.ApprovalCode.Value(),
 		AuthorizationCode: responseData.AuthorizationCode.Value(),
 	}, nil
