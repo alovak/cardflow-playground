@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,12 +10,8 @@ import (
 )
 
 func main() {
-	iso8583Address := flag.String("iso8583Addr", "127.0.0.1:8583", "Address of the ISO8583 server")
-
-	flag.Parse()
-
 	logger := log.New()
-	app := acquirer.NewApp(logger, *iso8583Address)
+	app := acquirer.NewApp(logger, acquirer.DefaultConfig())
 
 	err := app.Start()
 	if err != nil {

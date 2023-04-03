@@ -11,7 +11,7 @@ import (
 
 func main() {
 	logger := log.New()
-	app := issuer.NewApp(logger)
+	app := issuer.NewApp(logger, issuer.DefaultConfig())
 
 	err := app.Start()
 	if err != nil {

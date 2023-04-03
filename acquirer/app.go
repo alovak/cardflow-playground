@@ -19,15 +19,20 @@ type App struct {
 	Addr              string
 	ISO8583ServerAddr string
 	logger            *slog.Logger
+	config            *Config
 }
 
-func NewApp(logger *slog.Logger, iso8583ServerAddr string) *App {
+func NewApp(logger *slog.Logger, config *Config) *App {
 	logger = logger.With(slog.String("app", "acquirer"))
 
+	if config == nil {
+		config = DefaultConfig()
+	}
+
 	return &App{
-		logger:            logger,
-		wg:                &sync.WaitGroup{},
-		ISO8583ServerAddr: iso8583ServerAddr,
+		logger: logger,
+		wg:     &sync.WaitGroup{},
+		config: config,
 	}
 }
 
@@ -42,7 +47,7 @@ func (a *App) Start() error {
 
 	// setup iso8583Client
 	stanGenerator := iso8583.NewStanGenerator()
-	iso8583Client, err := iso8583.NewClient(a.logger, a.ISO8583ServerAddr, stanGenerator)
+	iso8583Client, err := iso8583.NewClient(a.logger, a.config.ISO8583Addr, stanGenerator)
 	if err != nil {
 		return fmt.Errorf("creating iso8583 client: %w", err)
 	}
@@ -56,7 +61,7 @@ func (a *App) Start() error {
 	api := NewAPI(a.logger, acq)
 	api.AppendRoutes(router)
 
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := net.Listen("tcp", a.config.HTTPAddr)
 	if err != nil {
 		return fmt.Errorf("listening tcp port: %w", err)
 	}

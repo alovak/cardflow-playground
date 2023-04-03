@@ -80,7 +80,10 @@ func TestEndToEndTransaction(t *testing.T) {
 }
 
 func setupIssuer(t *testing.T) (string, string) {
-	app := issuer.NewApp(log.New())
+	app := issuer.NewApp(log.New(), &issuer.Config{
+		HTTPAddr:    "127.0.0.1:0", // use random port
+		ISO8583Addr: "127.0.0.1:0", // use random port
+	})
 	err := app.Start()
 	require.NoError(t, err)
 
@@ -91,7 +94,10 @@ func setupIssuer(t *testing.T) (string, string) {
 }
 
 func setupAcquirer(t *testing.T, iso8583ServerAddr string) string {
-	app := acquirer.NewApp(log.New(), iso8583ServerAddr)
+	app := acquirer.NewApp(log.New(), &acquirer.Config{
+		HTTPAddr:    "127.0.0.1:0", // use random port
+		ISO8583Addr: iso8583ServerAddr,
+	})
 	err := app.Start()
 	require.NoError(t, err)
 

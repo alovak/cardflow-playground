@@ -22,14 +22,20 @@ type App struct {
 	ISO8583ServerAddr string
 	logger            *slog.Logger
 	iso8583Server     io.Closer
+	config            *Config
 }
 
-func NewApp(logger *slog.Logger) *App {
+func NewApp(logger *slog.Logger, config *Config) *App {
 	logger = logger.With(slog.String("app", "issuer"))
+
+	if config == nil {
+		config = DefaultConfig()
+	}
 
 	return &App{
 		wg:     &sync.WaitGroup{},
 		logger: logger,
+		config: config,
 	}
 }
 
@@ -42,7 +48,7 @@ func (a *App) Start() error {
 	repository := NewRepository()
 	iss := NewService(repository)
 
-	iso8583Server := issuer8583.NewServer(a.logger, "127.0.0.1:0", iss)
+	iso8583Server := issuer8583.NewServer(a.logger, a.config.ISO8583Addr, iss)
 	err := iso8583Server.Start()
 	if err != nil {
 		return fmt.Errorf("starting iso8583 server: %w", err)
@@ -53,7 +59,7 @@ func (a *App) Start() error {
 	api := NewAPI(iss)
 	api.AppendRoutes(router)
 
-	l, err := net.Listen("tcp", "127.0.0.1:0")
+	l, err := net.Listen("tcp", a.config.HTTPAddr)
 	if err != nil {
 		return fmt.Errorf("listening tcp port: %w", err)
 	}
