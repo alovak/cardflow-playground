@@ -1,17 +1,14 @@
 package main_test
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"testing"
-	"time"
 
 	"github.com/alovak/cardflow-playground/acquirer"
 	acquirerClient "github.com/alovak/cardflow-playground/acquirer/client"
 	"github.com/alovak/cardflow-playground/acquirer/models"
 	"github.com/alovak/cardflow-playground/issuer"
+	issuerClient "github.com/alovak/cardflow-playground/issuer/client"
 	issuerModels "github.com/alovak/cardflow-playground/issuer/models"
 	"github.com/alovak/cardflow-playground/log"
 	"github.com/stretchr/testify/require"
@@ -23,7 +20,7 @@ func TestEndToEndTransaction(t *testing.T) {
 	acquirerBasePath := setupAcquirer(t, iso8583ServerAddr)
 
 	// configure the issuer client
-	issuerClient := NewIssuerClient(issuerBasePath)
+	issuerClient := issuerClient.New(issuerBasePath)
 	acquirerClient := acquirerClient.New(acquirerBasePath)
 
 	// Given: Create an account with $100 balance
@@ -102,110 +99,4 @@ func setupAcquirer(t *testing.T, iso8583ServerAddr string) string {
 	t.Cleanup(app.Shutdown)
 
 	return fmt.Sprintf("http://%s", app.Addr)
-}
-
-type issuerClient struct {
-	httpClient *http.Client
-	baseURL    string
-}
-
-func NewIssuerClient(baseURL string) *issuerClient {
-	httpClient := &http.Client{
-		Transport: &http.Transport{
-			IdleConnTimeout: 5 * time.Second,
-		},
-	}
-
-	return &issuerClient{
-		baseURL:    baseURL,
-		httpClient: httpClient,
-	}
-}
-
-// CreateAccount creates a new account with the given balance and currency and
-// returns the account ID or an error.
-func (i *issuerClient) CreateAccount(req issuerModels.CreateAccount) (string, error) {
-	reqJSON, err := json.Marshal(req)
-	if err != nil {
-		return "", err
-	}
-
-	res, err := i.httpClient.Post(i.baseURL+"/accounts", "application/json", bytes.NewReader(reqJSON))
-	if err != nil {
-		return "", err
-	}
-
-	if res.StatusCode != http.StatusCreated {
-		return "", fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
-	}
-
-	var account issuerModels.Account
-	err = json.NewDecoder(res.Body).Decode(&account)
-	if err != nil {
-		return "", err
-	}
-
-	return account.ID, nil
-}
-
-// GetAccount returns the account for the given account ID or an error.
-func (i *issuerClient) GetAccount(accountID string) (issuerModels.Account, error) {
-	res, err := i.httpClient.Get(i.baseURL + "/accounts/" + accountID)
-	if err != nil {
-		return issuerModels.Account{}, err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return issuerModels.Account{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusOK)
-	}
-
-	var account issuerModels.Account
-	err = json.NewDecoder(res.Body).Decode(&account)
-	if err != nil {
-		return issuerModels.Account{}, err
-	}
-
-	return account, nil
-}
-
-// IssueCard issues a new card for the given account ID and returns the card or
-// an error.
-func (i *issuerClient) IssueCard(accountID string) (issuerModels.Card, error) {
-	res, err := i.httpClient.Post(i.baseURL+"/accounts/"+accountID+"/cards", "application/json", nil)
-	if err != nil {
-		return issuerModels.Card{}, err
-	}
-
-	if res.StatusCode != http.StatusCreated {
-		return issuerModels.Card{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
-	}
-
-	var card issuerModels.Card
-	err = json.NewDecoder(res.Body).Decode(&card)
-	if err != nil {
-		return issuerModels.Card{}, err
-	}
-
-	return card, nil
-}
-
-// GetTransactions returns the list of transactions for the given card ID
-// and account ID or an error.
-func (i *issuerClient) GetTransactions(accountID string) ([]issuerModels.Transaction, error) {
-	res, err := i.httpClient.Get(i.baseURL + "/accounts/" + accountID + "/transactions")
-	if err != nil {
-		return nil, err
-	}
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusOK)
-	}
-
-	var transactions []issuerModels.Transaction
-	err = json.NewDecoder(res.Body).Decode(&transactions)
-	if err != nil {
-		return nil, err
-	}
-
-	return transactions, nil
 }
