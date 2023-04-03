@@ -120,6 +120,12 @@ func (s *server) handleAuthorizationRequest(c *iso8583Connection.Connection, mes
 			ExpirationDate:        requestData.ExpirationDate.Value(),
 			CardVerificationValue: requestData.CardVerificationValue.Value(),
 		},
+		Merchant: models.Merchant{
+			Name:       requestData.AcceptorInformation.Name.Value(),
+			MCC:        requestData.AcceptorInformation.MCC.Value(),
+			PostalCode: requestData.AcceptorInformation.PostalCode.Value(),
+			WebSite:    requestData.AcceptorInformation.WebSite.Value(),
+		},
 	}
 
 	var responseData *AuthorizationResponse

@@ -9,6 +9,7 @@ type Transaction struct {
 	AuthorizationCode string
 	ApprovalCode      string
 	Status            TransactionStatus
+	Merchant          Merchant
 }
 
 type TransactionStatus string

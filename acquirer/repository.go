@@ -11,6 +11,7 @@ var ErrNotFound = fmt.Errorf("not found")
 
 type Repository interface {
 	CreateMerchant(merchant *models.Merchant) error
+	GetMerchant(merchantID string) (*models.Merchant, error)
 	CreatePayment(payment *models.Payment) error
 	GetPayment(merchantID, paymentID string) (*models.Payment, error)
 }
@@ -36,6 +37,18 @@ func (r *repository) CreateMerchant(merchant *models.Merchant) error {
 	r.merchants[merchant.ID] = merchant
 
 	return nil
+}
+
+func (r *repository) GetMerchant(merchantID string) (*models.Merchant, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	merchant, ok := r.merchants[merchantID]
+	if !ok {
+		return nil, ErrNotFound
+	}
+
+	return merchant, nil
 }
 
 func (r *repository) CreatePayment(payment *models.Payment) error {

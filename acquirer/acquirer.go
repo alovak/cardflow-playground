@@ -14,7 +14,7 @@ type Service struct {
 }
 
 type ISO8583Client interface {
-	AuthorizePayment(payment *models.Payment, card models.Card) (models.AuthorizationResponse, error)
+	AuthorizePayment(payment *models.Payment, card models.Card, merchant models.Merchant) (models.AuthorizationResponse, error)
 }
 
 func NewService(repo Repository, iso8583Client ISO8583Client) *Service {
@@ -61,7 +61,12 @@ func (a *Service) CreatePayment(merchantID string, create models.CreatePayment) 
 		return nil, fmt.Errorf("creating payment: %w", err)
 	}
 
-	response, err := a.iso8583Client.AuthorizePayment(payment, create.Card)
+	merchant, err := a.repo.GetMerchant(merchantID)
+	if err != nil {
+		return nil, fmt.Errorf("getting merchant: %w", err)
+	}
+
+	response, err := a.iso8583Client.AuthorizePayment(payment, create.Card, *merchant)
 	if err != nil {
 		payment.Status = models.PaymentStatusError
 		// update payment details

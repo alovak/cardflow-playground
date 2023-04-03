@@ -66,10 +66,18 @@ func TestEndToEndTransaction(t *testing.T) {
 
 	require.Len(t, transactions, 1)
 	require.Equal(t, card.ID, transactions[0].CardID)
+
+	// check the transaction details
 	require.Equal(t, 10_00, transactions[0].Amount)
 	require.Equal(t, "USD", transactions[0].Currency)
 	require.Equal(t, issuerModels.TransactionStatusAuthorized, transactions[0].Status)
 	require.Equal(t, payment.AuthorizationCode, transactions[0].AuthorizationCode)
+
+	// check the merchant details
+	require.Equal(t, merchant.Name, transactions[0].Merchant.Name)
+	require.Equal(t, merchant.MCC, transactions[0].Merchant.MCC)
+	require.Equal(t, merchant.PostalCode, transactions[0].Merchant.PostalCode)
+	require.Equal(t, merchant.WebSite, transactions[0].Merchant.WebSite)
 
 	// Account's available balance should be less by the transaction amount
 	account, err := issuerClient.GetAccount(accountID)

@@ -10,6 +10,7 @@ import (
 	"github.com/moov-io/iso8583/network"
 	"github.com/moov-io/iso8583/padding"
 	"github.com/moov-io/iso8583/prefix"
+	"github.com/moov-io/iso8583/sort"
 )
 
 var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
@@ -76,7 +77,42 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 			Enc:         encoding.ASCII,
 			Pref:        prefix.ASCII.Fixed,
 		}),
-
+		10: field.NewComposite(&field.Spec{
+			Length:      999,
+			Description: "Acceptor Information",
+			Pref:        prefix.ASCII.LLL,
+			Tag: &field.TagSpec{
+				Length: 2,
+				Enc:    encoding.ASCII,
+				Sort:   sort.StringsByInt,
+			},
+			Subfields: map[string]field.Field{
+				"01": field.NewString(&field.Spec{
+					Length:      99,
+					Description: "Merchant Name",
+					Enc:         encoding.ASCII,
+					Pref:        prefix.ASCII.LL,
+				}),
+				"02": field.NewString(&field.Spec{
+					Length:      4,
+					Description: "Merchant Category Code (MCC)",
+					Enc:         encoding.ASCII,
+					Pref:        prefix.ASCII.Fixed,
+				}),
+				"03": field.NewString(&field.Spec{
+					Length:      10,
+					Description: "Merchant Postal Code",
+					Enc:         encoding.ASCII,
+					Pref:        prefix.ASCII.LL,
+				}),
+				"04": field.NewString(&field.Spec{
+					Length:      299,
+					Description: "Merchant Website",
+					Enc:         encoding.ASCII,
+					Pref:        prefix.ASCII.LLL,
+				}),
+			},
+		}),
 		11: field.NewString(&field.Spec{
 			Length:      6,
 			Description: "Systems Trace Audit Number (STAN)",

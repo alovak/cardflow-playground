@@ -94,6 +94,7 @@ func (i *Service) AuthorizeRequest(req models.AuthorizationRequest) (models.Auth
 		CardID:    card.ID,
 		Amount:    req.Amount,
 		Currency:  req.Currency,
+		Merchant:  req.Merchant,
 	}
 
 	err = i.repo.CreateTransaction(transaction)

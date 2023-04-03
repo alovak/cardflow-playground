@@ -53,7 +53,7 @@ func (c *Client) Connect() error {
 	return nil
 }
 
-func (c *Client) AuthorizePayment(payment *models.Payment, card models.Card) (models.AuthorizationResponse, error) {
+func (c *Client) AuthorizePayment(payment *models.Payment, card models.Card, merchant models.Merchant) (models.AuthorizationResponse, error) {
 	c.logger.Info("authorizing payment", slog.String("payment_id", payment.ID))
 
 	requestMessage := iso8583.NewMessage(spec)
@@ -66,6 +66,12 @@ func (c *Client) AuthorizePayment(payment *models.Payment, card models.Card) (mo
 		STAN:                  field.NewStringValue(c.stanGenerator.Next()),
 		CardVerificationValue: field.NewStringValue(card.CardVerificationValue),
 		ExpirationDate:        field.NewStringValue(card.ExpirationDate),
+		AcceptorInformation: &AcceptorInformation{
+			Name:       field.NewStringValue(merchant.Name),
+			MCC:        field.NewStringValue(merchant.MCC),
+			PostalCode: field.NewStringValue(merchant.PostalCode),
+			WebSite:    field.NewStringValue(merchant.WebSite),
+		},
 	}
 
 	err := requestMessage.Marshal(requestData)
