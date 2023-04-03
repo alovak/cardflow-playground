@@ -1,4 +1,4 @@
-package issuer
+package models
 
 type Card struct {
 	ID                    string

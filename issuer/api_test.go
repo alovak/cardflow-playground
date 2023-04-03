@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/alovak/cardflow-playground/issuer"
+	"github.com/alovak/cardflow-playground/issuer/models"
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
 )
@@ -20,7 +21,7 @@ func TestAPI(t *testing.T) {
 	api.AppendRoutes(router)
 
 	t.Run("create account", func(t *testing.T) {
-		create := issuer.CreateAccount{
+		create := models.CreateAccount{
 			Balance:  10_00,
 			Currency: "USD",
 		}

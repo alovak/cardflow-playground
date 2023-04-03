@@ -6,7 +6,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/alovak/cardflow-playground/issuer/authorizer"
+	"github.com/alovak/cardflow-playground/issuer/models"
 	"github.com/google/uuid"
 )
 
@@ -20,8 +20,8 @@ func NewService(repo Repository) *Service {
 	}
 }
 
-func (i *Service) CreateAccount(req CreateAccount) (*Account, error) {
-	account := &Account{
+func (i *Service) CreateAccount(req models.CreateAccount) (*models.Account, error) {
+	account := &models.Account{
 		ID:               uuid.New().String(),
 		AvailableBalance: req.Balance,
 		Currency:         req.Currency,
@@ -35,7 +35,7 @@ func (i *Service) CreateAccount(req CreateAccount) (*Account, error) {
 	return account, nil
 }
 
-func (i *Service) GetAccount(accountID string) (*Account, error) {
+func (i *Service) GetAccount(accountID string) (*models.Account, error) {
 	account, err := i.repo.GetAccount(accountID)
 	if err != nil {
 		return nil, fmt.Errorf("finding account: %w", err)
@@ -44,8 +44,8 @@ func (i *Service) GetAccount(accountID string) (*Account, error) {
 	return account, nil
 }
 
-func (i *Service) IssueCard(accountID string) (*Card, error) {
-	card := &Card{
+func (i *Service) IssueCard(accountID string) (*models.Card, error) {
+	card := &models.Card{
 		ID:                    uuid.New().String(),
 		AccountID:             accountID,
 		Number:                generateFakeCardNumber(),
@@ -62,7 +62,7 @@ func (i *Service) IssueCard(accountID string) (*Card, error) {
 }
 
 // ListTransactions returns a list of transactions for the given account ID.
-func (i *Service) ListTransactions(accountID string) ([]*Transaction, error) {
+func (i *Service) ListTransactions(accountID string) ([]*models.Transaction, error) {
 	transactions, err := i.repo.ListTransactions(accountID)
 	if err != nil {
 		return nil, fmt.Errorf("listing transactions: %w", err)
@@ -71,24 +71,24 @@ func (i *Service) ListTransactions(accountID string) ([]*Transaction, error) {
 	return transactions, nil
 }
 
-func (i *Service) AuthorizeRequest(req authorizer.AuthorizationRequest) (authorizer.AuthorizationResponse, error) {
+func (i *Service) AuthorizeRequest(req models.AuthorizationRequest) (models.AuthorizationResponse, error) {
 	card, err := i.repo.FindCardForAuthorization(req.Card)
 	if err != nil {
 		if errors.Is(err, ErrNotFound) {
-			return authorizer.AuthorizationResponse{
-				ApprovalCode: authorizer.ApprovalCodeInvalidCard,
+			return models.AuthorizationResponse{
+				ApprovalCode: models.ApprovalCodeInvalidCard,
 			}, nil
 		}
 
-		return authorizer.AuthorizationResponse{}, fmt.Errorf("finding card: %w", err)
+		return models.AuthorizationResponse{}, fmt.Errorf("finding card: %w", err)
 	}
 
 	account, err := i.repo.GetAccount(card.AccountID)
 	if err != nil {
-		return authorizer.AuthorizationResponse{}, fmt.Errorf("finding account: %w", err)
+		return models.AuthorizationResponse{}, fmt.Errorf("finding account: %w", err)
 	}
 
-	transaction := &Transaction{
+	transaction := &models.Transaction{
 		ID:        uuid.New().String(),
 		AccountID: card.AccountID,
 		CardID:    card.ID,
@@ -98,27 +98,27 @@ func (i *Service) AuthorizeRequest(req authorizer.AuthorizationRequest) (authori
 
 	err = i.repo.CreateTransaction(transaction)
 	if err != nil {
-		return authorizer.AuthorizationResponse{}, fmt.Errorf("creating transaction: %w", err)
+		return models.AuthorizationResponse{}, fmt.Errorf("creating transaction: %w", err)
 	}
 
 	// hold the funds on the account
 	err = account.Hold(req.Amount)
 	if err != nil {
 		// handle insufficient funds
-		if !errors.Is(err, ErrInsufficientFunds) {
-			return authorizer.AuthorizationResponse{}, fmt.Errorf("holding funds: %w", err)
+		if !errors.Is(err, models.ErrInsufficientFunds) {
+			return models.AuthorizationResponse{}, fmt.Errorf("holding funds: %w", err)
 		}
 
-		return authorizer.AuthorizationResponse{
-			ApprovalCode: authorizer.ApprovalCodeInsufficientFunds,
+		return models.AuthorizationResponse{
+			ApprovalCode: models.ApprovalCodeInsufficientFunds,
 		}, nil
 	}
 
-	transaction.ApprovalCode = authorizer.ApprovalCodeApproved
+	transaction.ApprovalCode = models.ApprovalCodeApproved
 	transaction.AuthorizationCode = generateAuthorizationCode()
-	transaction.Status = TransactionStatusAuthorized
+	transaction.Status = models.TransactionStatusAuthorized
 
-	return authorizer.AuthorizationResponse{
+	return models.AuthorizationResponse{
 		AuthorizationCode: transaction.AuthorizationCode,
 		ApprovalCode:      transaction.ApprovalCode,
 	}, nil

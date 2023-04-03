@@ -1,4 +1,4 @@
-package issuer
+package models
 
 type AuthorizationRequest struct {
 	Amount   int

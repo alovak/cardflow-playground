@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/alovak/cardflow-playground/issuer/authorizer"
+	"github.com/alovak/cardflow-playground/issuer/models"
 	"github.com/moov-io/iso8583"
 	iso8583Connection "github.com/moov-io/iso8583-connection"
 	iso8583Server "github.com/moov-io/iso8583-connection/server"
@@ -17,10 +17,14 @@ type server struct {
 
 	server     *iso8583Server.Server
 	logger     *slog.Logger
-	authorizer authorizer.Authorizer
+	authorizer Authorizer
 }
 
-func NewServer(logger *slog.Logger, addr string, authorizer authorizer.Authorizer) *server {
+type Authorizer interface {
+	AuthorizeRequest(req models.AuthorizationRequest) (models.AuthorizationResponse, error)
+}
+
+func NewServer(logger *slog.Logger, addr string, authorizer Authorizer) *server {
 	logger = logger.With(slog.String("type", "iso8583-server"), slog.String("addr", addr))
 
 	s := &server{
@@ -108,10 +112,10 @@ func (s *server) handleAuthorizationRequest(c *iso8583Connection.Connection, mes
 		return fmt.Errorf("parsing amount: %w", err)
 	}
 
-	authRequest := authorizer.AuthorizationRequest{
+	authRequest := models.AuthorizationRequest{
 		Amount:   amount,
 		Currency: requestData.Currency.Value(),
-		Card: authorizer.Card{
+		Card: models.Card{
 			Number:                requestData.PrimaryAccountNumber.Value(),
 			ExpirationDate:        requestData.ExpirationDate.Value(),
 			CardVerificationValue: requestData.CardVerificationValue.Value(),
@@ -127,7 +131,7 @@ func (s *server) handleAuthorizationRequest(c *iso8583Connection.Connection, mes
 		responseData = &AuthorizationResponse{
 			MTI:          field.NewStringValue("0110"),
 			STAN:         field.NewStringValue(requestData.STAN.Value()),
-			ApprovalCode: field.NewStringValue(authorizer.ApprovalCodeSystemError),
+			ApprovalCode: field.NewStringValue(models.ApprovalCodeSystemError),
 		}
 	} else {
 		responseData = &AuthorizationResponse{

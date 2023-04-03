@@ -12,6 +12,7 @@ import (
 	acquirerClient "github.com/alovak/cardflow-playground/acquirer/client"
 	"github.com/alovak/cardflow-playground/acquirer/models"
 	"github.com/alovak/cardflow-playground/issuer"
+	issuerModels "github.com/alovak/cardflow-playground/issuer/models"
 	"github.com/alovak/cardflow-playground/log"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +27,7 @@ func TestEndToEndTransaction(t *testing.T) {
 	acquirerClient := acquirerClient.New(acquirerBasePath)
 
 	// Given: Create an account with $100 balance
-	accountID, err := issuerClient.CreateAccount(issuer.CreateAccount{
+	accountID, err := issuerClient.CreateAccount(issuerModels.CreateAccount{
 		Balance:  100_00, // $100
 		Currency: "USD",
 	})
@@ -70,7 +71,7 @@ func TestEndToEndTransaction(t *testing.T) {
 	require.Equal(t, card.ID, transactions[0].CardID)
 	require.Equal(t, 10_00, transactions[0].Amount)
 	require.Equal(t, "USD", transactions[0].Currency)
-	require.Equal(t, issuer.TransactionStatusAuthorized, transactions[0].Status)
+	require.Equal(t, issuerModels.TransactionStatusAuthorized, transactions[0].Status)
 	require.Equal(t, payment.AuthorizationCode, transactions[0].AuthorizationCode)
 
 	// Account's available balance should be less by the transaction amount
@@ -123,7 +124,7 @@ func NewIssuerClient(baseURL string) *issuerClient {
 
 // CreateAccount creates a new account with the given balance and currency and
 // returns the account ID or an error.
-func (i *issuerClient) CreateAccount(req issuer.CreateAccount) (string, error) {
+func (i *issuerClient) CreateAccount(req issuerModels.CreateAccount) (string, error) {
 	reqJSON, err := json.Marshal(req)
 	if err != nil {
 		return "", err
@@ -138,7 +139,7 @@ func (i *issuerClient) CreateAccount(req issuer.CreateAccount) (string, error) {
 		return "", fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
 	}
 
-	var account issuer.Account
+	var account issuerModels.Account
 	err = json.NewDecoder(res.Body).Decode(&account)
 	if err != nil {
 		return "", err
@@ -148,20 +149,20 @@ func (i *issuerClient) CreateAccount(req issuer.CreateAccount) (string, error) {
 }
 
 // GetAccount returns the account for the given account ID or an error.
-func (i *issuerClient) GetAccount(accountID string) (issuer.Account, error) {
+func (i *issuerClient) GetAccount(accountID string) (issuerModels.Account, error) {
 	res, err := i.httpClient.Get(i.baseURL + "/accounts/" + accountID)
 	if err != nil {
-		return issuer.Account{}, err
+		return issuerModels.Account{}, err
 	}
 
 	if res.StatusCode != http.StatusOK {
-		return issuer.Account{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusOK)
+		return issuerModels.Account{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusOK)
 	}
 
-	var account issuer.Account
+	var account issuerModels.Account
 	err = json.NewDecoder(res.Body).Decode(&account)
 	if err != nil {
-		return issuer.Account{}, err
+		return issuerModels.Account{}, err
 	}
 
 	return account, nil
@@ -169,20 +170,20 @@ func (i *issuerClient) GetAccount(accountID string) (issuer.Account, error) {
 
 // IssueCard issues a new card for the given account ID and returns the card or
 // an error.
-func (i *issuerClient) IssueCard(accountID string) (issuer.Card, error) {
+func (i *issuerClient) IssueCard(accountID string) (issuerModels.Card, error) {
 	res, err := i.httpClient.Post(i.baseURL+"/accounts/"+accountID+"/cards", "application/json", nil)
 	if err != nil {
-		return issuer.Card{}, err
+		return issuerModels.Card{}, err
 	}
 
 	if res.StatusCode != http.StatusCreated {
-		return issuer.Card{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
+		return issuerModels.Card{}, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusCreated)
 	}
 
-	var card issuer.Card
+	var card issuerModels.Card
 	err = json.NewDecoder(res.Body).Decode(&card)
 	if err != nil {
-		return issuer.Card{}, err
+		return issuerModels.Card{}, err
 	}
 
 	return card, nil
@@ -190,7 +191,7 @@ func (i *issuerClient) IssueCard(accountID string) (issuer.Card, error) {
 
 // GetTransactions returns the list of transactions for the given card ID
 // and account ID or an error.
-func (i *issuerClient) GetTransactions(accountID string) ([]issuer.Transaction, error) {
+func (i *issuerClient) GetTransactions(accountID string) ([]issuerModels.Transaction, error) {
 	res, err := i.httpClient.Get(i.baseURL + "/accounts/" + accountID + "/transactions")
 	if err != nil {
 		return nil, err
@@ -200,7 +201,7 @@ func (i *issuerClient) GetTransactions(accountID string) ([]issuer.Transaction, 
 		return nil, fmt.Errorf("unexpected status code: %d; expected: %d", res.StatusCode, http.StatusOK)
 	}
 
-	var transactions []issuer.Transaction
+	var transactions []issuerModels.Transaction
 	err = json.NewDecoder(res.Body).Decode(&transactions)
 	if err != nil {
 		return nil, err

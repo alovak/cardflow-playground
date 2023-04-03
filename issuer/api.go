@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/alovak/cardflow-playground/issuer/models"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -30,7 +31,7 @@ func (a *API) AppendRoutes(r chi.Router) {
 }
 
 func (a *API) createAccount(w http.ResponseWriter, r *http.Request) {
-	create := CreateAccount{}
+	create := models.CreateAccount{}
 	err := json.NewDecoder(r.Body).Decode(&create)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
