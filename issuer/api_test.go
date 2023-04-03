@@ -34,7 +34,7 @@ func TestAPI(t *testing.T) {
 
 		require.Equal(t, http.StatusCreated, w.Code)
 
-		account := issuer.Account{}
+		account := models.Account{}
 		err := json.Unmarshal(w.Body.Bytes(), &account)
 		require.NoError(t, err)
 
