@@ -14,6 +14,23 @@ Both applications communicate using the [ISO 8583](https://en.wikipedia.org/wiki
 * [moov-io/iso8583](https://github.com/moov-io/iso8583) - A Golang library for packing and unpacking ISO 8583 messages, providing a seamless way to work with the standard message format.
 * [moov-io/iso8583-connection](https://github.com/moov-io/iso8583-connection) - A Golang library that streamlines network management for ISO 8583, handling crucial tasks such as connection establishment, TLS configuration, heartbeat/echo/idle messaging, and request processing. Additionally, it features a connection pool with a re-connect capability to enhance reliability and performance.
 
+
+## Out Of Scope
+
+Please note that the following aspects are considered out of scope for this project:
+
+1. **PCI and Security:** The project does not adhere to PCI compliance, and it handles sensitive data such as PANs, CVVs, and other card information in plain text. There is no implementation of Luhn algorithm, fraud checks, encryption, or other security measures.
+1. **Simplified Model:** This project uses a simplified model for the transaction process, which means some parts may be missing or not fully implemented.
+1. **Performance Optimization:** The primary focus of this project is on simplicity, readability and clarity rather than performance. As such, the code has not been optimized for performance or resource efficiency.
+1. **Testing Coverage:** The project does not include comprehensive test coverage as would be expected in a production application. It is recommended to enhance the testing suite if you plan to use this project as a foundation for a production system.
+
+## Features
+
+- Create and manage accounts and cards for the issuer
+- Create and manage merchants for the acquirer
+- Process payments using ISO 8583
+- End-to-end testing with both components
+
 ### End-to-end Transaction Flow
 
 Here is the end-to-end test to showcase the integration between the Issuer and Acquirer.
@@ -31,13 +48,6 @@ Here is the end-to-end test to showcase the integration between the Issuer and A
 11. Verify that the account's available balance and hold balance have been updated accordingly.
 
 The test case outlined in [e2e_test.go](./e2e_test.go) and demonstrates an end-to-end transaction flow between the Issuer and Acquirer applications. 
-
-## Features
-
-- Create and manage accounts and cards for the issuer
-- Create and manage merchants for the acquirer
-- Process payments using ISO 8583
-- End-to-end testing with both components
 
 ## Directory Structure
 
