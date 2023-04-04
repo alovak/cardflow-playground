@@ -15,6 +15,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+// App is the main application, it contains all the components of the issuer service
+// and is responsible for starting and stopping them.
 type App struct {
 	srv               *http.Server
 	wg                *sync.WaitGroup

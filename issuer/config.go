@@ -1,5 +1,6 @@
 package issuer
 
+// Config is a configuration for the issuer application
 type Config struct {
 	HTTPAddr    string
 	ISO8583Addr string

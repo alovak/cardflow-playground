@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+// API is a HTTP API for the issuer service
 type API struct {
 	issuer *Service
 }
