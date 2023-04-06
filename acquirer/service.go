@@ -9,7 +9,7 @@ import (
 )
 
 type Service struct {
-	repo          Repository
+	repo          *Repository
 	iso8583Client ISO8583Client
 }
 
@@ -17,7 +17,7 @@ type ISO8583Client interface {
 	AuthorizePayment(payment *models.Payment, card models.Card, merchant models.Merchant) (models.AuthorizationResponse, error)
 }
 
-func NewService(repo Repository, iso8583Client ISO8583Client) *Service {
+func NewService(repo *Repository, iso8583Client ISO8583Client) *Service {
 	return &Service{
 		repo:          repo,
 		iso8583Client: iso8583Client,

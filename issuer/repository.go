@@ -9,16 +9,7 @@ import (
 
 var ErrNotFound = fmt.Errorf("not found")
 
-type Repository interface {
-	CreateAccount(account *models.Account) error
-	GetAccount(accountID string) (*models.Account, error)
-	CreateCard(card *models.Card) error
-	ListTransactions(accountID string) ([]*models.Transaction, error)
-	FindCardForAuthorization(card models.Card) (*models.Card, error)
-	CreateTransaction(transaction *models.Transaction) error
-}
-
-type repository struct {
+type Repository struct {
 	Cards        []*models.Card
 	Accounts     []*models.Account
 	Transactions []*models.Transaction
@@ -26,15 +17,15 @@ type repository struct {
 	mu sync.RWMutex
 }
 
-func NewRepository() *repository {
-	return &repository{
+func NewRepository() *Repository {
+	return &Repository{
 		Cards:        make([]*models.Card, 0),
 		Accounts:     make([]*models.Account, 0),
 		Transactions: make([]*models.Transaction, 0),
 	}
 }
 
-func (r *repository) CreateAccount(account *models.Account) error {
+func (r *Repository) CreateAccount(account *models.Account) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -43,7 +34,7 @@ func (r *repository) CreateAccount(account *models.Account) error {
 	return nil
 }
 
-func (r *repository) GetAccount(accountID string) (*models.Account, error) {
+func (r *Repository) GetAccount(accountID string) (*models.Account, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -56,7 +47,7 @@ func (r *repository) GetAccount(accountID string) (*models.Account, error) {
 	return nil, ErrNotFound
 }
 
-func (r *repository) CreateCard(card *models.Card) error {
+func (r *Repository) CreateCard(card *models.Card) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -65,7 +56,7 @@ func (r *repository) CreateCard(card *models.Card) error {
 	return nil
 }
 
-func (r *repository) FindCardForAuthorization(card models.Card) (*models.Card, error) {
+func (r *Repository) FindCardForAuthorization(card models.Card) (*models.Card, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -82,7 +73,7 @@ func (r *repository) FindCardForAuthorization(card models.Card) (*models.Card, e
 	return nil, ErrNotFound
 }
 
-func (r *repository) CreateTransaction(transaction *models.Transaction) error {
+func (r *Repository) CreateTransaction(transaction *models.Transaction) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -92,7 +83,7 @@ func (r *repository) CreateTransaction(transaction *models.Transaction) error {
 }
 
 // ListTransactions returns all transactions for a given account ID.
-func (r *repository) ListTransactions(accountID string) ([]*models.Transaction, error) {
+func (r *Repository) ListTransactions(accountID string) ([]*models.Transaction, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
