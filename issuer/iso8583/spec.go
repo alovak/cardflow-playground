@@ -14,7 +14,7 @@ import (
 )
 
 var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
-	Name: "ISO 8583 CardFlow Playgroud ASCII Specification",
+	Name: "ISO 8583 CardFlow Playground ASCII Specification",
 	Fields: map[int]field.Field{
 		0: field.NewString(&field.Spec{
 			Length:      4,
