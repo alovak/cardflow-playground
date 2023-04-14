@@ -49,6 +49,55 @@ Here is the end-to-end test to showcase the integration between the Issuer and A
 
 The test case outlined in [e2e_test.go](./e2e_test.go) and demonstrates an end-to-end transaction flow between the Issuer and Acquirer applications. 
 
+Here are the sequence diagrams for each part of the flow:
+
+#### Customer opens a bank account and gets a card
+
+```mermaid
+sequenceDiagram
+    participant C as Customer
+    participant I as Issuer
+
+    C->>I: Open account ($100 balance)
+    I-->>C: Account created
+    C->>I: Request card for the account
+    I-->>C: Card issued
+```
+
+#### Merchant registration with acquirer
+
+```mermaid
+sequenceDiagram
+    participant M as Merchant
+    participant A as Acquirer
+
+    M->>A: Register with Acquirer
+    A-->>M: Registration successful
+```
+
+#### Payment flow with Customer, Acquirer, and Issuer
+
+```mermaid
+sequenceDiagram
+    participant C as Customer
+    participant A as Acquirer
+    participant I as Issuer
+
+    %% Customer initiates payment using the issued card for a registered merchant
+    %% Customer's request is an HTTP API call
+    C->>A: HTTP API: Initiate payment using issued card (for registered merchant)
+
+    %% Acquirer and Issuer use ISO 8583 messages with a socket TCP connection
+    A->>I: ISO 8583 (TCP): Request transaction authorization
+    I->>I: Check card (CVV, expiration, etc.)
+    I->>I: Check cardholder (customer) balance
+    I->>I: Update balance, put transaction amount on hold
+    I-->>A: ISO 8583 (TCP): Transaction authorized
+
+    %% Acquirer returns the result to the Customer
+    A-->>C: HTTP API: Payment authorized
+```
+
 ## Directory Structure
 
 The directory structure for issuer and acquirer is outlined below:
