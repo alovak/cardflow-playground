@@ -1,3 +1,5 @@
+![Go Tests](https://github.com/alovak/cardflow-playground/actions/workflows/go.yml/badge.svg)
+
 # CardFlow Playground
 
 A learning environment for exploring card [acquiring](https://moov.io/resources/dictionary/#acquirer) and [issuing](https://moov.io/resources/dictionary/#issuer) systems built with Go.
