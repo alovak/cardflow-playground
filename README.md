@@ -172,6 +172,11 @@ Run the end-to-end tests with `go test -v`
 - `POST /accounts/:id/cards`: Issue a new card for the account
 - `GET /accounts/:id/transactions`: Get transactions for an account
 
+### Postman Collection
+
+After running both issuing and acquiring servers as described above, you can make requests from the following Postman collection:
+https://www.postman.com/alovak/workspace/cardflow-playground/overview
+
 ### Acquirer API
 
 - `POST /merchants`: Create a new merchant
