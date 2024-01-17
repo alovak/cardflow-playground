@@ -7,7 +7,6 @@ import (
 	"github.com/alovak/cardflow-playground/acquirer/models"
 	"github.com/moov-io/iso8583"
 	iso8583Connection "github.com/moov-io/iso8583-connection"
-	"github.com/moov-io/iso8583/field"
 	"golang.org/x/exp/slog"
 )
 
@@ -58,19 +57,19 @@ func (c *Client) AuthorizePayment(payment *models.Payment, card models.Card, mer
 
 	requestMessage := iso8583.NewMessage(spec)
 	requestData := &AuthorizationRequest{
-		MTI:                   field.NewStringValue("0100"),
-		PrimaryAccountNumber:  field.NewStringValue(card.Number),
-		Amount:                field.NewStringValue(fmt.Sprintf("%d", payment.Amount)),
-		Currency:              field.NewStringValue(payment.Currency),
-		TransmissionDateTime:  field.NewStringValue(payment.CreatedAt.UTC().Format(time.RFC3339)),
-		STAN:                  field.NewStringValue(c.stanGenerator.Next()),
-		CardVerificationValue: field.NewStringValue(card.CardVerificationValue),
-		ExpirationDate:        field.NewStringValue(card.ExpirationDate),
+		MTI:                   "0100",
+		PrimaryAccountNumber:  card.Number,
+		Amount:                payment.Amount,
+		Currency:              payment.Currency,
+		TransmissionDateTime:  payment.CreatedAt.UTC().Format(time.RFC3339),
+		STAN:                  c.stanGenerator.Next(),
+		CardVerificationValue: card.CardVerificationValue,
+		ExpirationDate:        card.ExpirationDate,
 		AcceptorInformation: &AcceptorInformation{
-			Name:       field.NewStringValue(merchant.Name),
-			MCC:        field.NewStringValue(merchant.MCC),
-			PostalCode: field.NewStringValue(merchant.PostalCode),
-			WebSite:    field.NewStringValue(merchant.WebSite),
+			Name:       merchant.Name,
+			MCC:        merchant.MCC,
+			PostalCode: merchant.PostalCode,
+			WebSite:    merchant.WebSite,
 		},
 	}
 
@@ -91,7 +90,7 @@ func (c *Client) AuthorizePayment(payment *models.Payment, card models.Card, mer
 	}
 
 	return models.AuthorizationResponse{
-		ApprovalCode:      responseData.ApprovalCode.Value(),
-		AuthorizationCode: responseData.AuthorizationCode.Value(),
+		ApprovalCode:      responseData.ApprovalCode,
+		AuthorizationCode: responseData.AuthorizationCode,
 	}, nil
 }

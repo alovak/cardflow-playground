@@ -2,13 +2,11 @@ package iso8583
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/alovak/cardflow-playground/issuer/models"
 	"github.com/moov-io/iso8583"
 	iso8583Connection "github.com/moov-io/iso8583-connection"
 	iso8583Server "github.com/moov-io/iso8583-connection/server"
-	"github.com/moov-io/iso8583/field"
 	"golang.org/x/exp/slog"
 )
 
@@ -117,32 +115,27 @@ func (s *Server) handleAuthorizationRequest(c *iso8583Connection.Connection, mes
 	}
 
 	s.logger.With(
-		slog.String("mti", requestData.MTI.Value()),
-		slog.String("stan", requestData.STAN.Value()),
-		slog.String("amount", requestData.Amount.Value()),
-		slog.String("currency", requestData.Currency.Value()),
+		slog.String("mti", requestData.MTI),
+		slog.String("stan", requestData.STAN),
+		slog.Int64("amount", requestData.Amount),
+		slog.String("currency", requestData.Currency),
 	).Info("handling authorization request")
-
-	amount, err := strconv.Atoi(requestData.Amount.Value())
-	if err != nil {
-		return fmt.Errorf("parsing amount: %w", err)
-	}
 
 	// here we create an instance of our authorization request
 	// and pass it to the authorizer
 	authRequest := models.AuthorizationRequest{
-		Amount:   amount,
-		Currency: requestData.Currency.Value(),
+		Amount:   requestData.Amount,
+		Currency: requestData.Currency,
 		Card: models.Card{
-			Number:                requestData.PrimaryAccountNumber.Value(),
-			ExpirationDate:        requestData.ExpirationDate.Value(),
-			CardVerificationValue: requestData.CardVerificationValue.Value(),
+			Number:                requestData.PrimaryAccountNumber,
+			ExpirationDate:        requestData.ExpirationDate,
+			CardVerificationValue: requestData.CardVerificationValue,
 		},
 		Merchant: models.Merchant{
-			Name:       requestData.AcceptorInformation.Name.Value(),
-			MCC:        requestData.AcceptorInformation.MCC.Value(),
-			PostalCode: requestData.AcceptorInformation.PostalCode.Value(),
-			WebSite:    requestData.AcceptorInformation.WebSite.Value(),
+			Name:       requestData.AcceptorInformation.Name,
+			MCC:        requestData.AcceptorInformation.MCC,
+			PostalCode: requestData.AcceptorInformation.PostalCode,
+			WebSite:    requestData.AcceptorInformation.WebSite,
 		},
 	}
 
@@ -155,16 +148,16 @@ func (s *Server) handleAuthorizationRequest(c *iso8583Connection.Connection, mes
 	authResponse, err := s.authorizer.AuthorizeRequest(authRequest)
 	if err != nil {
 		responseData = &AuthorizationResponse{
-			MTI:          field.NewStringValue("0110"),
-			STAN:         field.NewStringValue(requestData.STAN.Value()),
-			ApprovalCode: field.NewStringValue(models.ApprovalCodeSystemError),
+			MTI:          "0110",
+			STAN:         requestData.STAN,
+			ApprovalCode: models.ApprovalCodeSystemError,
 		}
 	} else {
 		responseData = &AuthorizationResponse{
-			MTI:               field.NewStringValue("0110"),
-			STAN:              field.NewStringValue(requestData.STAN.Value()),
-			ApprovalCode:      field.NewStringValue(authResponse.ApprovalCode),
-			AuthorizationCode: field.NewStringValue(authResponse.AuthorizationCode),
+			MTI:               "0110",
+			STAN:              requestData.STAN,
+			ApprovalCode:      authResponse.ApprovalCode,
+			AuthorizationCode: authResponse.AuthorizationCode,
 		}
 	}
 
@@ -180,10 +173,10 @@ func (s *Server) handleAuthorizationRequest(c *iso8583Connection.Connection, mes
 	}
 
 	s.logger.With(
-		slog.String("mti", responseData.MTI.Value()),
-		slog.String("stan", responseData.STAN.Value()),
-		slog.String("approval_code", responseData.ApprovalCode.Value()),
-		slog.String("authorization_code", responseData.AuthorizationCode.Value()),
+		slog.String("mti", responseData.MTI),
+		slog.String("stan", responseData.STAN),
+		slog.String("approval_code", responseData.ApprovalCode),
+		slog.String("authorization_code", responseData.AuthorizationCode),
 	).Info("authorization response sent")
 
 	return nil
