@@ -3,7 +3,7 @@ package models
 import "time"
 
 type CreatePayment struct {
-	Amount   int
+	Amount   int64
 	Currency string
 	Card     Card
 }
@@ -20,7 +20,7 @@ const (
 type Payment struct {
 	ID                string
 	MerchantID        string
-	Amount            int
+	Amount            int64
 	Currency          string
 	Card              SafeCard
 	Status            PaymentStatus

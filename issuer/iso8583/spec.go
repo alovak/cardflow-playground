@@ -34,7 +34,7 @@ var spec *iso8583.MessageSpec = &iso8583.MessageSpec{
 			Enc:         encoding.ASCII,
 			Pref:        prefix.ASCII.Fixed,
 		}),
-		3: field.NewString(&field.Spec{
+		3: field.NewNumeric(&field.Spec{
 			Length:      6,
 			Description: "Amount",
 			Enc:         encoding.ASCII,

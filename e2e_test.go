@@ -68,7 +68,7 @@ func TestEndToEndTransaction(t *testing.T) {
 	require.Equal(t, card.ID, transactions[0].CardID)
 
 	// check the transaction details
-	require.Equal(t, 10_00, transactions[0].Amount)
+	require.Equal(t, int64(10_00), transactions[0].Amount)
 	require.Equal(t, "USD", transactions[0].Currency)
 	require.Equal(t, issuerModels.TransactionStatusAuthorized, transactions[0].Status)
 	require.Equal(t, payment.AuthorizationCode, transactions[0].AuthorizationCode)
@@ -83,8 +83,8 @@ func TestEndToEndTransaction(t *testing.T) {
 	account, err := issuerClient.GetAccount(accountID)
 	require.NoError(t, err)
 
-	require.Equal(t, 100_00-10_00, account.AvailableBalance)
-	require.Equal(t, 10_00, account.HoldBalance)
+	require.Equal(t, int64(100_00-10_00), account.AvailableBalance)
+	require.Equal(t, int64(10_00), account.HoldBalance)
 }
 
 func setupIssuer(t *testing.T) (string, string) {

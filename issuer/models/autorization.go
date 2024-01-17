@@ -1,7 +1,7 @@
 package models
 
 type AuthorizationRequest struct {
-	Amount   int
+	Amount   int64
 	Currency string
 	Card     Card
 	Merchant Merchant

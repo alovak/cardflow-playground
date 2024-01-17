@@ -4,7 +4,7 @@ type Transaction struct {
 	ID                string
 	AccountID         string
 	CardID            string
-	Amount            int
+	Amount            int64
 	Currency          string
 	AuthorizationCode string
 	ApprovalCode      string
