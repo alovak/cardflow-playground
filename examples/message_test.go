@@ -3,6 +3,7 @@ package examples
 import (
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -151,16 +152,14 @@ func TestMessagePackingAndUnpacking(t *testing.T) {
 	// use time from our example
 	timeFromExample := "240812160140"
 	processingTime, err := time.Parse("060102150405", timeFromExample)
-	require.NotEmpty(t, processingTime)
 	require.NoError(t, err)
 
 	// Set the message fields
 	err = requestMessage.Marshal(&AuthorizationRequest{
-		MTI:    "0100",
-		PAN:    "4242424242424242",
-		Amount: 1000,
-		// TransactionDatetime: processingTime.Format("060102150405"),
-		TransactionDatetime: time.Now().Format("060102150405"),
+		MTI:                 "0100",
+		PAN:                 "4242424242424242",
+		Amount:              1000,
+		TransactionDatetime: processingTime.Format("060102150405"),
 		Currency:            "840",
 		CVV:                 "7890",
 		ExpirationDate:      "2512",
@@ -192,7 +191,7 @@ func TestMessagePackingAndUnpacking(t *testing.T) {
 	require.Equal(t, "0100", authorizationRequest.MTI)
 	require.Equal(t, "4242424242424242", authorizationRequest.PAN)
 	require.Equal(t, int64(1000), authorizationRequest.Amount)
-	// require.Equal(t, timeFromExample, authorizationRequest.TransactionDatetime)
+	require.Equal(t, timeFromExample, authorizationRequest.TransactionDatetime)
 	require.Equal(t, "840", authorizationRequest.Currency)
 	require.Equal(t, "7890", authorizationRequest.CVV)
 	require.Equal(t, "2512", authorizationRequest.ExpirationDate)
@@ -209,6 +208,17 @@ func TestMessagePackingAndUnpacking(t *testing.T) {
 	// using %X to convert the byte slice to a hex string in uppercase
 	require.Equal(t, examplePackedMessage, fmt.Sprintf("%X", packed))
 
-	err = iso8583.Describe(requestMessage, os.Stdout)
+	// to make it right, let's filter the value of CVV field when we output it
+	filterCVV := iso8583.FilterField("8", iso8583.FilterFunc(func(in string, data field.Field) string {
+		if len(in) == 0 {
+			return in
+		}
+		return in[0:1] + strings.Repeat("*", len(in)-1)
+	}))
+
+	// don't forget to apply default filter
+	filters := append(iso8583.DefaultFilters(), filterCVV)
+
+	err = iso8583.Describe(requestMessage, os.Stdout, filters...)
 	require.NoError(t, err)
 }
